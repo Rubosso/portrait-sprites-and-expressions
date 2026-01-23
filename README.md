@@ -116,3 +116,24 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## Credits
 
 Created by Ruben André Guardado Serrano
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Support
+
+If you encounter any issues or have questions:
+1. Check the [EXAMPLES.md](EXAMPLES.md) file for usage examples
+2. Review the [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) for technical details
+3. Open an issue on the [GitHub repository](https://github.com/Rubosso/Portrait-Sprites-Expressions/issues)
+
+## Roadmap
+
+Potential future enhancements:
+- Drag and drop sprite placement tool
+- Visual spritesheet editor
+- Animation support between expressions
+- Import/export sprite configurations
+- Preset character templates
+
