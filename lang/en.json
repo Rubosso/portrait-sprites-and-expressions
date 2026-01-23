@@ -1,0 +1,15 @@
+{
+  "PORTRAIT_SPRITES": {
+    "Layer": "Portrait Sprites",
+    "HUD": {
+      "Title": "Portrait Expression",
+      "PrevExpression": "Previous Expression",
+      "NextExpression": "Next Expression",
+      "ExpressionLabel": "Expression {current} of {total}"
+    },
+    "Tools": {
+      "PortraitSprite": "Portrait Sprite",
+      "PlacePortrait": "Place Portrait Sprite"
+    }
+  }
+}

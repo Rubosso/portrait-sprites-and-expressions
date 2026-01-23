@@ -1,0 +1,26 @@
+# Node modules (if any build tools are added in future)
+node_modules/
+
+# Build artifacts
+dist/
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
