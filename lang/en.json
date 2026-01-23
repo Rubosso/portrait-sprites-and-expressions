@@ -5,8 +5,41 @@
       "Title": "Portrait Expression",
       "PrevExpression": "Previous Expression",
       "NextExpression": "Next Expression",
-      "ExpressionLabel": "Expression {current} of {total}"
+      "ExpressionLabel": "Expression {current} of {total}",
+      "ExpressionSelect": "Select Expression",
+      "ExpressionName": "Expression Name",
+      "ExpressionNumber": "Expression {index}",
+      "SingleExpression": "Single expression available"
     },
+    "Creator": {
+      "Title": "Portrait Sprite Creator",
+      "Tool": "Create Portrait Sprite",
+      "Sections": {
+        "Source": "Source",
+        "Body": "Body Frame",
+        "Expressions": "Expression Grid",
+        "Names": "Expression Names",
+        "Preview": "Preview"
+      },
+      "Spritesheet": "Spritesheet",
+      "BodyFrame": "Body Frame (x, y, width, height)",
+      "BodyFrameHint": "Define the rectangle for the full body sprite.",
+      "HeadGrid": "Grid Start + Cell Size",
+      "HeadGridLayout": "Grid Layout (columns, rows, count)",
+      "HeadOffset": "Head Offset (x, y)",
+      "ExpressionLabel": "Expression {index}",
+      "CreateSprite": "Create Sprite",
+      "PreviewHint": "Preview shows the body frame in red and expression frames in cyan.",
+      "PreviewPlaceholder": "Select a spritesheet to preview the grid.",
+      "DefaultExpressionName": "Expression {index}",
+      "Messages": {
+        "Created": "Portrait sprite created."
+      },
+      "Errors": {
+        "MissingSpritesheet": "Select a spritesheet before creating a sprite."
+      }
+    },
+    "DefaultExpression": "Default Expression",
     "Tools": {
       "PortraitSprite": "Portrait Sprite",
       "PlacePortrait": "Place Portrait Sprite"
