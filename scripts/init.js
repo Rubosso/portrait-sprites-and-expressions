@@ -4,6 +4,7 @@
  */
 
 import { PortraitSpritesLayer } from "./layer.js";
+import { PortraitSpriteCreator } from "./creator.js";
 
 Hooks.once("init", () => {
   console.log("Portrait Sprites & Expressions | Initializing");
@@ -45,7 +46,18 @@ Hooks.on("getSceneControlButtons", (controls) => {
     title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
     icon: "fas fa-user-circle",
     layer: "portraitSprites",
-    tools: [],
+    tools: [
+      {
+        name: "portraitSpriteCreator",
+        title: game.i18n.localize("PORTRAIT_SPRITES.Creator.Tool"),
+        icon: "fas fa-plus-circle",
+        onClick: () => {
+          const creator = new PortraitSpriteCreator();
+          creator.render(true);
+        },
+        button: true
+      }
+    ],
     activeTool: "select"
   });
 });
@@ -75,7 +87,9 @@ window.PortraitSprites = {
       id: foundry.utils.randomID(),
       spritesheet: config.spritesheet,
       bodyFrame: config.bodyFrame || { x: 0, y: 0, width: 100, height: 100 },
-      headFrames: config.headFrames || [{ x: 0, y: 100, width: 100, height: 50 }],
+      headFrames: config.headFrames || [
+        { x: 0, y: 100, width: 100, height: 50, name: game.i18n.localize("PORTRAIT_SPRITES.DefaultExpression") }
+      ],
       headOffset: config.headOffset || { x: 0, y: 0 },
       x: config.x || 0,
       y: config.y || 0,

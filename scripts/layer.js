@@ -97,7 +97,7 @@ class PortraitSprite extends PIXI.Container {
     
     // Head frames configuration (array of frames for different expressions)
     this.headFrames = data.headFrames || [
-      { x: 0, y: 100, width: 100, height: 50 }
+      { x: 0, y: 100, width: 100, height: 50, name: game.i18n.localize("PORTRAIT_SPRITES.DefaultExpression") }
     ];
     this.currentExpression = data.currentExpression || 0;
     
@@ -107,6 +107,8 @@ class PortraitSprite extends PIXI.Container {
     this.bodySprite = null;
     this.headSprite = null;
     this.baseTexture = null;
+    this.isDragging = false;
+    this.dragOffset = { x: 0, y: 0 };
   }
 
   /**
@@ -148,6 +150,10 @@ class PortraitSprite extends PIXI.Container {
     this.interactive = true;
     this.buttonMode = true;
     this.on("rightclick", this._onRightClick.bind(this));
+    this.on("pointerdown", this._onDragStart.bind(this));
+    this.on("pointerup", this._onDragEnd.bind(this));
+    this.on("pointerupoutside", this._onDragEnd.bind(this));
+    this.on("pointermove", this._onDragMove.bind(this));
   }
 
   /**
@@ -157,6 +163,19 @@ class PortraitSprite extends PIXI.Container {
   async update(updates) {
     if (updates.x !== undefined) this.position.x = updates.x;
     if (updates.y !== undefined) this.position.y = updates.y;
+    if (updates.headOffset) {
+      this.headOffset = updates.headOffset;
+      if (this.headSprite) {
+        this.headSprite.position.set(this.headOffset.x, this.headOffset.y);
+      }
+    }
+    if (updates.headFrames) {
+      this.headFrames = updates.headFrames;
+      if (updates.currentExpression === undefined) {
+        this.currentExpression = Math.min(this.currentExpression, this.headFrames.length - 1);
+      }
+      this.updateExpression();
+    }
     if (updates.currentExpression !== undefined) {
       this.currentExpression = updates.currentExpression;
       this.updateExpression();
@@ -182,6 +201,16 @@ class PortraitSprite extends PIXI.Container {
     
     // Call updateUvs to update the UV coordinates
     this.headSprite.texture.updateUvs();
+  }
+
+  /**
+   * Update the name of the current expression
+   * @param {string} name
+   */
+  async updateExpressionName(name) {
+    if (!this.headFrames[this.currentExpression]) return;
+    this.headFrames[this.currentExpression].name = name;
+    await this._saveToScene();
   }
 
   /**
@@ -211,6 +240,20 @@ class PortraitSprite extends PIXI.Container {
     
     if (index >= 0) {
       sprites[index].currentExpression = this.currentExpression;
+      sprites[index].headFrames = this.headFrames;
+      sprites[index].x = this.position.x;
+      sprites[index].y = this.position.y;
+      await canvas.scene.setFlag("portrait-sprites-expressions", "sprites", sprites);
+    }
+  }
+
+  async _savePosition() {
+    const sprites = canvas.scene.getFlag("portrait-sprites-expressions", "sprites") || [];
+    const index = sprites.findIndex(s => s.id === this.id);
+
+    if (index >= 0) {
+      sprites[index].x = this.position.x;
+      sprites[index].y = this.position.y;
       await canvas.scene.setFlag("portrait-sprites-expressions", "sprites", sprites);
     }
   }
@@ -224,6 +267,26 @@ class PortraitSprite extends PIXI.Container {
     // Show expression HUD
     const hud = new PortraitSpriteHUD(this);
     hud.render(true);
+  }
+
+  _onDragStart(event) {
+    if (event.data.button !== 0) return;
+    this.isDragging = true;
+    const position = event.data.getLocalPosition(this.parent);
+    this.dragOffset.x = position.x - this.position.x;
+    this.dragOffset.y = position.y - this.position.y;
+  }
+
+  _onDragMove(event) {
+    if (!this.isDragging) return;
+    const position = event.data.getLocalPosition(this.parent);
+    this.position.set(position.x - this.dragOffset.x, position.y - this.dragOffset.y);
+  }
+
+  async _onDragEnd() {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    await this._savePosition();
   }
 
   /**
@@ -265,10 +328,17 @@ class PortraitSpriteHUD extends Application {
    * @override
    */
   getData() {
+    const expressions = this.sprite.headFrames.map((frame, index) => ({
+      index,
+      label: frame.name || game.i18n.format("PORTRAIT_SPRITES.HUD.ExpressionNumber", { index: index + 1 }),
+      isActive: index === this.sprite.currentExpression
+    }));
     return {
       currentExpression: this.sprite.currentExpression + 1,
       totalExpressions: this.sprite.headFrames.length,
-      hasMultipleExpressions: this.sprite.headFrames.length > 1
+      hasMultipleExpressions: this.sprite.headFrames.length > 1,
+      expressions,
+      currentExpressionName: this.sprite.headFrames[this.sprite.currentExpression]?.name || ""
     };
   }
 
@@ -285,6 +355,21 @@ class PortraitSpriteHUD extends Application {
     
     html.find(".next-expression").click(() => {
       this.sprite.nextExpression();
+      this.render();
+    });
+
+    html.find(".expression-select").on("change", event => {
+      const index = Number(event.currentTarget.value);
+      if (Number.isNaN(index)) return;
+      this.sprite.currentExpression = index;
+      this.sprite.updateExpression();
+      this.sprite._saveToScene();
+      this.render();
+    });
+
+    html.find(".expression-name-input").on("change", event => {
+      const name = event.currentTarget.value.trim();
+      this.sprite.updateExpressionName(name);
       this.render();
     });
   }

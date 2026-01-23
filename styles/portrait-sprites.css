@@ -45,6 +45,126 @@
   flex: 1;
 }
 
+.expression-select-row,
+.expression-name-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #e5e7eb;
+  font-size: 12px;
+}
+
+.expression-select,
+.expression-name-input {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  color: #f9fafb;
+  padding: 6px 8px;
+}
+
+.portrait-sprite-creator {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.portrait-sprite-creator .creator-section {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 12px 0;
+}
+
+.portrait-sprite-creator .creator-section h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #f8fafc;
+}
+
+.portrait-sprite-creator .form-row,
+.portrait-sprite-creator .grid-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.portrait-sprite-creator .grid-inputs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(60px, 1fr));
+  gap: 8px;
+}
+
+.portrait-sprite-creator .grid-row:nth-of-type(3) .grid-inputs {
+  grid-template-columns: repeat(2, minmax(60px, 1fr));
+}
+
+.portrait-sprite-creator input[type="text"],
+.portrait-sprite-creator input[type="number"] {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #f8fafc;
+  padding: 6px 8px;
+}
+
+.portrait-sprite-creator .input-with-button {
+  display: flex;
+  gap: 6px;
+}
+
+.portrait-sprite-creator .file-picker {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #f8fafc;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.portrait-sprite-creator .helper-text {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.portrait-sprite-creator .expression-names {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portrait-sprite-creator .preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portrait-sprite-creator .sprite-preview-canvas {
+  width: 100%;
+  max-width: 480px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #020617;
+}
+
+.portrait-sprite-creator .creator-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
+
+.portrait-sprite-creator .create-sprite {
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: #f8fafc;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.portrait-sprite-creator .create-sprite:hover {
+  background: #1d4ed8;
+}
+
 /* Layer controls */
 #controls .scene-control[data-control="portraitSprites"] {
   display: flex;
