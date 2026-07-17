@@ -9,7 +9,15 @@
       "ExpressionSelect": "Select Expression",
       "ExpressionName": "Expression Name",
       "ExpressionNumber": "Expression {index}",
-      "SingleExpression": "Single expression available"
+      "SingleExpression": "Single expression available",
+      "NoExpression": "No Expression",
+      "Rotation": "Rotation (degrees)",
+      "RotateLeft": "Rotate left 15 degrees",
+      "RotateRight": "Rotate right 15 degrees",
+      "ScaleX": "Horizontal scale (%)",
+      "ScaleY": "Vertical scale (%)",
+      "ResetSize": "Reset Transform",
+      "ResetSizeHint": "Restore the sprite to 0 degrees and its original 100% width and height"
     },
     "Creator": {
       "Title": "Portrait Sprite Creator",
@@ -43,7 +51,7 @@
         "Names": "Expression Names",
         "Final": "Final Preview"
       },
-      "ImageDimensions": "Original image: {width} \u00d7 {height}px",
+      "ImageDimensions": "Original image: {width} × {height}px",
       "ImageDimensionsUnknown": "Original image dimensions unavailable until a spritesheet is loaded.",
       "FinalPreviewHint": "Cycles through expressions once per second using the current body, head grid, and head offset settings.",
       "MagnifierHint": "Move over the final preview to inspect pixels; use the mouse wheel to adjust zoom."
