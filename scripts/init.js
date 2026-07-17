@@ -54,7 +54,6 @@ Hooks.on("getSceneControlButtons", (controls) => {
         title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
         icon: "fas fa-mouse-pointer",
         order: 0,
-        visible: false,
         onChange: () => {}
       },
       portraitSpriteCreator: {
