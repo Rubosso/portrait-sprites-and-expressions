@@ -83,7 +83,7 @@ function drawActionButton() {
  * Foundry reserves right-drag for canvas panning, so the launcher is opened
  * from a left-clickable ellipsis button shown beside the transform handles.
  */
-export function installContextMenuFix(PortraitSprite, SpriteContextMenu) {
+export function installContextMenuFix(PortraitSpritesLayer, PortraitSprite, SpriteContextMenu) {
   if (PortraitSprite.prototype.contextMenuFixInstalled) return;
 
   Object.defineProperty(PortraitSprite.prototype, "contextMenuFixInstalled", {
@@ -93,10 +93,17 @@ export function installContextMenuFix(PortraitSprite, SpriteContextMenu) {
     writable: false
   });
 
+  const originalLayerSetInteractionActive = PortraitSpritesLayer.prototype.setInteractionActive;
   const originalDraw = PortraitSprite.prototype.draw;
   const originalUpdateTransformHandles = PortraitSprite.prototype.updateTransformHandles;
   const originalSetSelected = PortraitSprite.prototype.setSelected;
   const originalDestroy = PortraitSprite.prototype.destroy;
+
+  PortraitSpritesLayer.prototype.setInteractionActive = function(active) {
+    const result = originalLayerSetInteractionActive.call(this, active);
+    this.removeAllListeners?.("rightdown");
+    return result;
+  };
 
   PortraitSprite.prototype.openSpriteActionMenu = function(event) {
     const point = getPointerPosition(event);
@@ -166,6 +173,8 @@ export function installContextMenuFix(PortraitSprite, SpriteContextMenu) {
 
   PortraitSprite.prototype.draw = async function(...args) {
     await originalDraw.apply(this, args);
+    this.removeAllListeners?.("rightdown");
+    this.removeAllListeners?.("rightclick");
     this.ensureSpriteActionButton();
     this.updateSpriteActionButton();
   };
