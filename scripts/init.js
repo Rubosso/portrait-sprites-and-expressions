@@ -63,12 +63,15 @@ Hooks.on("getSceneControlButtons", (controls) => {
         icon: "fas fa-plus-circle",
         order: 1,
         button: true,
-        onClick: () => {
+        onChange: (_event, active) => {
+          if (active === false) return;
+
           const creator = new PortraitSpriteCreator();
           creator.render(true);
         }
       }
     },
+    onChange: () => {},
     activeTool: "portraitSpritesSelect"
   };
 });
