@@ -96,6 +96,7 @@
 }
 
 .expression-choice {
+  align-items: start;
   background: rgba(10, 12, 18, 0.72);
   border: 2px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -105,10 +106,12 @@
   display: grid !important;
   gap: 6px;
   grid-template-rows: minmax(88px, 1fr) auto;
+  justify-items: center;
   min-height: 132px;
   min-width: 0;
+  overflow: hidden;
   padding: 7px;
-  text-align: center;
+  text-align: center !important;
   width: 100%;
 }
 
@@ -131,6 +134,7 @@
   display: block;
   height: auto !important;
   image-rendering: pixelated;
+  justify-self: center;
   max-height: 128px;
   max-width: 128px;
   object-fit: contain;
@@ -138,15 +142,20 @@
 }
 
 .expression-choice-label {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
   color: #f8fafc;
   display: block;
   font-size: 12px;
   font-weight: 600;
+  justify-self: stretch;
   line-height: 1.2;
   overflow: hidden;
-  padding: 1px 2px 2px;
+  padding: 6px 2px 2px;
+  text-align: center !important;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
 }
 
 /* Creator and editor: every tab has one forced vertical scroller. */
