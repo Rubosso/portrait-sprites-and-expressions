@@ -8,8 +8,10 @@ import { log } from "./constants.js";
 import { PortraitSprite, PortraitSpriteHUD, PortraitSpritesLayer } from "./layer.js";
 import { PortraitSpriteCreator } from "./creator.js";
 import { installNoExpressionSupport } from "./no-expression.js";
+import { installTransformSupport } from "./transform.js";
 
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
+installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
 
 function activatePortraitLayer() {
   const layer = canvas.portraitSprites;
