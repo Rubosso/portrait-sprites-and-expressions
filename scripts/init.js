@@ -8,6 +8,17 @@ import { log } from "./constants.js";
 import { PortraitSpritesLayer } from "./layer.js";
 import { PortraitSpriteCreator } from "./creator.js";
 
+function activatePortraitLayer() {
+  const layer = canvas.portraitSprites;
+  if (!layer) return;
+
+  // Foundry v13 InteractionLayer defaults this to false, which prevents
+  // pointer events from reaching interactive sprite children.
+  layer.interactiveChildren = true;
+  layer.activate?.({ tool: "select" });
+  layer.setInteractionActive?.(true);
+}
+
 Hooks.once("init", () => {
   log("Initializing");
   
@@ -24,18 +35,18 @@ Hooks.once("init", () => {
 Hooks.once("setup", () => {
   log("Setup");
   
-  // Register the custom canvas layer
+  // Interactive canvas layers belong in the interface group in Foundry v13.
   CONFIG.Canvas.layers.portraitSprites = {
     layerClass: PortraitSpritesLayer,
-    group: "primary"
+    group: "interface"
   };
 });
 
 Hooks.on("canvasReady", (canvas) => {
   log("Canvas Ready");
   
-  // The layer will automatically draw when canvas is ready
   if (canvas.portraitSprites) {
+    canvas.portraitSprites.interactiveChildren = true;
     log("Layer initialized with", canvas.portraitSprites.sprites.size, "sprites");
   }
 });
@@ -47,14 +58,16 @@ Hooks.on("getSceneControlButtons", (controls) => {
     title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
     icon: "fas fa-user-circle",
     order: Object.keys(controls).length,
-    layer: "portraitSprites",
+    activeTool: "select",
     tools: {
-      portraitSpritesSelect: {
-        name: "portraitSpritesSelect",
-        title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
+      select: {
+        name: "select",
+        title: game.i18n.localize("CONTROLS.CommonSelect"),
         icon: "fas fa-mouse-pointer",
         order: 0,
-        onChange: () => {}
+        onChange: (_event, active) => {
+          if (active) activatePortraitLayer();
+        }
       },
       portraitSpriteCreator: {
         name: "portraitSpriteCreator",
@@ -70,8 +83,14 @@ Hooks.on("getSceneControlButtons", (controls) => {
         }
       }
     },
-    onChange: () => {},
-    activeTool: "portraitSpritesSelect"
+    onChange: (_event, active) => {
+      if (active === false) {
+        canvas.portraitSprites?.setInteractionActive?.(false);
+        return;
+      }
+
+      activatePortraitLayer();
+    }
   };
 });
 

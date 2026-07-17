@@ -4,12 +4,23 @@
 import { DEFAULT_BODY_FRAME, DEFAULT_HEAD_FRAME, DEFAULT_HEAD_OFFSET, TEMPLATES } from "./constants.js";
 import { getSceneSprites, updateSceneSprite } from "./scene-flags.js";
 const CanvasLayerBase = foundry.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
+const InteractionLayerBase = foundry.canvas?.layers?.InteractionLayer ?? globalThis.InteractionLayer ?? CanvasLayerBase;
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class PortraitSpritesLayer extends CanvasLayerBase {
+export class PortraitSpritesLayer extends InteractionLayerBase {
   constructor() {
     super();
     this.sprites = new Map();
+    this.interactionActive = false;
+    this.eventMode = "static";
+    this.interactive = true;
+    this.hitArea = new PIXI.Rectangle(-100000, -100000, 200000, 200000);
+
+    this.on("pointerdown", this.#onLayerPointerDown, this);
+    this.on("rightdown", this.#onLayerRightDown, this);
+    this.on("pointermove", this.#onLayerPointerMove, this);
+    this.on("pointerup", this.#onLayerPointerUp, this);
+    this.on("pointerupoutside", this.#onLayerPointerUp, this);
   }
 
   /**
@@ -48,8 +59,53 @@ export class PortraitSpritesLayer extends CanvasLayerBase {
     
     this.sprites.set(data.id, sprite);
     this.addChild(sprite);
+    sprite.setInteractive(this.interactionActive);
     
     return sprite;
+  }
+
+  /**
+   * @override
+   */
+  activate(...args) {
+    const result = super.activate?.(...args);
+    this.setInteractionActive(true);
+    return result ?? this;
+  }
+
+  /**
+   * @override
+   */
+  deactivate(...args) {
+    this.setInteractionActive(false);
+    const result = super.deactivate?.(...args);
+    return result ?? this;
+  }
+
+  /**
+   * @override
+   */
+  _activate(...args) {
+    const result = super._activate?.(...args);
+    this.setInteractionActive(true);
+    return result;
+  }
+
+  /**
+   * @override
+   */
+  _deactivate(...args) {
+    this.setInteractionActive(false);
+    return super._deactivate?.(...args);
+  }
+
+  /**
+   * Enable or disable sprite pointer interactions for the selected tool.
+   * @param {boolean} active
+   */
+  setInteractionActive(active) {
+    this.interactionActive = Boolean(active);
+    this.#setSpritesInteractive(this.interactionActive);
   }
 
   /**
@@ -93,6 +149,71 @@ export class PortraitSpritesLayer extends CanvasLayerBase {
     }
     this.sprites.clear();
   }
+
+  #setSpritesInteractive(active) {
+    this.eventMode = active ? "static" : "none";
+    this.interactive = active;
+    for (const sprite of this.sprites.values()) {
+      sprite.setInteractive(active);
+    }
+  }
+
+  #onLayerPointerDown(event) {
+    if (!this.interactionActive || this.#getPointerButton(event) !== 0) return;
+    const sprite = this.#pickSprite(this.#getLayerPointerPosition(event));
+    if (!sprite) return;
+    event.stopPropagation?.();
+    sprite.startDrag(event);
+  }
+
+  #onLayerRightDown(event) {
+    if (!this.interactionActive) return;
+    const sprite = this.#pickSprite(this.#getLayerPointerPosition(event));
+    if (!sprite) return;
+    event.stopPropagation?.();
+    sprite.showHud(event);
+  }
+
+  #onLayerPointerMove(event) {
+    if (!this.interactionActive) return;
+    const draggingSprite = this.#getDraggingSprite();
+    if (draggingSprite) {
+      draggingSprite.dragMove(event);
+      return;
+    }
+
+    const sprite = this.#pickSprite(this.#getLayerPointerPosition(event));
+    this.cursor = sprite ? "pointer" : null;
+  }
+
+  async #onLayerPointerUp(event) {
+    if (!this.interactionActive) return;
+    const draggingSprite = this.#getDraggingSprite();
+    if (!draggingSprite) return;
+    await draggingSprite.dragEnd(event);
+  }
+
+  #pickSprite(position) {
+    const sprites = Array.from(this.sprites.values());
+    for (let index = sprites.length - 1; index >= 0; index -= 1) {
+      const sprite = sprites[index];
+      if (sprite.containsLayerPoint(position)) return sprite;
+    }
+    return null;
+  }
+
+  #getDraggingSprite() {
+    return Array.from(this.sprites.values()).find(sprite => sprite.isDragging);
+  }
+
+  #getPointerButton(event) {
+    return event?.button ?? event?.data?.button ?? 0;
+  }
+
+  #getLayerPointerPosition(event) {
+    if (typeof event?.getLocalPosition === "function") return event.getLocalPosition(this);
+    return event.data.getLocalPosition(this);
+  }
 }
 
 /**
@@ -101,6 +222,8 @@ export class PortraitSpritesLayer extends CanvasLayerBase {
 class PortraitSprite extends PIXI.Container {
   constructor(data) {
     super();
+
+    this.setInteractive(false);
     
     this.id = data.id;
     this.spritesheet = data.spritesheet;
@@ -124,6 +247,8 @@ class PortraitSprite extends PIXI.Container {
     this.bodySprite = null;
     this.headSprite = null;
     this.baseTexture = null;
+    this.selectionFrame = null;
+    this.selected = false;
     this.isDragging = false;
     this.dragOffset = { x: 0, y: 0 };
   }
@@ -162,15 +287,54 @@ class PortraitSprite extends PIXI.Container {
     this.headSprite = new PIXI.Sprite(headTexture);
     this.headSprite.position.set(this.headOffset.x, this.headOffset.y);
     this.addChild(this.headSprite);
+
+    this.selectionFrame = new PIXI.Graphics();
+    this.selectionFrame.visible = false;
+    this.addChild(this.selectionFrame);
+    this.#updateHitArea();
     
-    // Make interactive for HUD
-    this.interactive = true;
-    this.buttonMode = true;
     this.on("rightclick", this._onRightClick.bind(this));
+    this.on("rightdown", this._onRightClick.bind(this));
     this.on("pointerdown", this._onDragStart.bind(this));
     this.on("pointerup", this._onDragEnd.bind(this));
     this.on("pointerupoutside", this._onDragEnd.bind(this));
     this.on("pointermove", this._onDragMove.bind(this));
+  }
+
+  /**
+   * Enable or disable pointer interaction for this sprite. Foundry activates
+   * interaction-layer children only while their layer is selected.
+   * @param {boolean} active
+   */
+  setInteractive(active) {
+    this.eventMode = active ? "static" : "none";
+    this.cursor = active ? "pointer" : null;
+    this.interactive = active;
+    this.buttonMode = active;
+    if (this.bodySprite) this.bodySprite.eventMode = "none";
+    if (this.headSprite) this.headSprite.eventMode = "none";
+  }
+
+  #updateHitArea() {
+    const minX = Math.min(0, this.headOffset.x);
+    const minY = Math.min(0, this.headOffset.y);
+    const maxX = Math.max(this.bodyFrame.width, this.headOffset.x + (this.headFrames[this.currentExpression]?.width ?? 0));
+    const maxY = Math.max(this.bodyFrame.height, this.headOffset.y + (this.headFrames[this.currentExpression]?.height ?? 0));
+    this.hitArea = new PIXI.Rectangle(minX, minY, maxX - minX, maxY - minY);
+    this.#drawSelectionFrame();
+  }
+
+  setSelected(selected) {
+    this.selected = Boolean(selected);
+    if (this.selectionFrame) this.selectionFrame.visible = this.selected;
+  }
+
+  #drawSelectionFrame() {
+    if (!this.selectionFrame || !this.hitArea) return;
+    this.selectionFrame.clear();
+    this.selectionFrame.lineStyle(2, 0xffc107, 1);
+    this.selectionFrame.drawRect(this.hitArea.x, this.hitArea.y, this.hitArea.width, this.hitArea.height);
+    this.selectionFrame.visible = this.selected;
   }
 
   /**
@@ -185,6 +349,7 @@ class PortraitSprite extends PIXI.Container {
       if (this.headSprite) {
         this.headSprite.position.set(this.headOffset.x, this.headOffset.y);
       }
+      this.#updateHitArea();
     }
     if (updates.headFrames) {
       this.headFrames = updates.headFrames;
@@ -192,10 +357,12 @@ class PortraitSprite extends PIXI.Container {
         this.currentExpression = Math.min(this.currentExpression, this.headFrames.length - 1);
       }
       this.updateExpression();
+      this.#updateHitArea();
     }
     if (updates.currentExpression !== undefined) {
       this.currentExpression = updates.currentExpression;
       this.updateExpression();
+      this.#updateHitArea();
     }
   }
 
@@ -273,31 +440,69 @@ class PortraitSprite extends PIXI.Container {
    * Handle right-click to show HUD
    */
   _onRightClick(event) {
-    event.stopPropagation();
-    
-    // Show expression HUD
-    const hud = new PortraitSpriteHUD(this);
-    hud.render(true);
+    event.stopPropagation?.();
+    this.showHud(event);
   }
 
   _onDragStart(event) {
-    if (event.data.button !== 0) return;
-    this.isDragging = true;
-    const position = event.data.getLocalPosition(this.parent);
-    this.dragOffset.x = position.x - this.position.x;
-    this.dragOffset.y = position.y - this.position.y;
+    if (this.#getPointerButton(event) !== 0) return;
+    event.stopPropagation?.();
+    this.startDrag(event);
   }
 
   _onDragMove(event) {
     if (!this.isDragging) return;
-    const position = event.data.getLocalPosition(this.parent);
+    event.stopPropagation?.();
+    this.dragMove(event);
+  }
+
+  async _onDragEnd(event) {
+    if (!this.isDragging) return;
+    event?.stopPropagation?.();
+    await this.dragEnd(event);
+  }
+
+  showHud() {
+    this.setSelected(true);
+    const hud = new PortraitSpriteHUD(this);
+    hud.render(true);
+  }
+
+  startDrag(event) {
+    this.setSelected(true);
+    this.isDragging = true;
+    const position = this.#getLocalPointerPosition(event);
+    this.dragOffset.x = position.x - this.position.x;
+    this.dragOffset.y = position.y - this.position.y;
+  }
+
+  dragMove(event) {
+    if (!this.isDragging) return;
+    const position = this.#getLocalPointerPosition(event);
     this.position.set(position.x - this.dragOffset.x, position.y - this.dragOffset.y);
   }
 
-  async _onDragEnd() {
+  async dragEnd(_event) {
     if (!this.isDragging) return;
     this.isDragging = false;
     await this._savePosition();
+  }
+
+  #getPointerButton(event) {
+    return event?.button ?? event?.data?.button ?? 0;
+  }
+
+  containsLayerPoint(position) {
+    if (!this.hitArea) return false;
+    const local = new PIXI.Point(position.x - this.position.x, position.y - this.position.y);
+    return this.hitArea.contains(local.x, local.y);
+  }
+
+  #getLocalPointerPosition(event) {
+    if (typeof event?.getLocalPosition === "function") {
+      return event.getLocalPosition(this.parent);
+    }
+    return event.data.getLocalPosition(this.parent);
   }
 
   /**
@@ -306,6 +511,7 @@ class PortraitSprite extends PIXI.Container {
   destroy(options) {
     if (this.bodySprite) this.bodySprite.destroy();
     if (this.headSprite) this.headSprite.destroy();
+    if (this.selectionFrame) this.selectionFrame.destroy();
     super.destroy(options);
   }
 }
