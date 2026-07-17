@@ -31,7 +31,7 @@ export class PortraitSpriteCreator extends Application {
   activateListeners(html) {
     super.activateListeners(html);
 
-    html.find("input, select").on("change input", event => {
+    html.find("input, select").on("change", event => {
       const { name, value, type } = event.currentTarget;
       if (!name) return;
       const parsedValue = type === "number" ? Number(value) : value;
@@ -67,10 +67,7 @@ export class PortraitSpriteCreator extends Application {
       event.preventDefault();
       const tab = event.currentTarget.dataset.tab;
       this.activeTab = tab;
-      html.find(".creator-tab").toggleClass("active", false);
-      html.find(`.creator-tab[data-tab='${tab}']`).toggleClass("active", true);
-      html.find(".creator-tab-panel").toggleClass("active", false);
-      html.find(`.creator-tab-panel[data-tab-panel='${tab}']`).toggleClass("active", true);
+      this.#activateTab(html, tab);
     });
 
     this.#activateTab(html, this.activeTab);
@@ -264,8 +261,8 @@ export class PortraitSpriteCreator extends Application {
   #drawOverlays(context) {
     context.save();
 
-    context.strokeStyle = "rgba(248, 113, 113, 0.95)";
-    context.lineWidth = 3;
+    context.strokeStyle = "rgba(248, 113, 113, 0.98)";
+    context.lineWidth = 5;
     context.strokeRect(
       this.formData.bodyFrame.x,
       this.formData.bodyFrame.y,
@@ -273,8 +270,8 @@ export class PortraitSpriteCreator extends Application {
       this.formData.bodyFrame.height
     );
 
-    context.strokeStyle = "rgba(244, 114, 182, 0.95)";
-    context.lineWidth = 3;
+    context.strokeStyle = "rgba(244, 114, 182, 0.98)";
+    context.lineWidth = 5;
     context.strokeRect(
       this.formData.headGrid.startX,
       this.formData.headGrid.startY,
@@ -282,7 +279,7 @@ export class PortraitSpriteCreator extends Application {
       this.formData.headGrid.rows * this.formData.headGrid.cellHeight
     );
 
-    context.lineWidth = 2;
+    context.lineWidth = 4;
     const count = this.#getExpressionCount();
     for (let i = 0; i < count; i += 1) {
       const column = i % this.formData.headGrid.columns;

@@ -38,10 +38,10 @@
             <div class="grid-row">
               <label>{{localize "PORTRAIT_SPRITES.Creator.BodyFrame"}}</label>
               <div class="grid-inputs small-coordinate-inputs">
-                <input name="bodyFrame.x" type="number" value="{{bodyFrame.x}}" min="0" aria-label="Body x" />
-                <input name="bodyFrame.y" type="number" value="{{bodyFrame.y}}" min="0" aria-label="Body y" />
-                <input name="bodyFrame.width" type="number" value="{{bodyFrame.width}}" min="1" aria-label="Body width" />
-                <input name="bodyFrame.height" type="number" value="{{bodyFrame.height}}" min="1" aria-label="Body height" />
+                <label class="coordinate-field"><span>X</span><input name="bodyFrame.x" type="number" value="{{bodyFrame.x}}" min="0" aria-label="Body x" /></label>
+                <label class="coordinate-field"><span>Y</span><input name="bodyFrame.y" type="number" value="{{bodyFrame.y}}" min="0" aria-label="Body y" /></label>
+                <label class="coordinate-field"><span>W</span><input name="bodyFrame.width" type="number" value="{{bodyFrame.width}}" min="1" aria-label="Body width" /></label>
+                <label class="coordinate-field"><span>H</span><input name="bodyFrame.height" type="number" value="{{bodyFrame.height}}" min="1" aria-label="Body height" /></label>
               </div>
             </div>
             <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.BodyFrameHint"}}</p>
@@ -52,24 +52,24 @@
             <div class="grid-row">
               <label>{{localize "PORTRAIT_SPRITES.Creator.HeadGrid"}}</label>
               <div class="grid-inputs small-coordinate-inputs">
-                <input name="headGrid.startX" type="number" value="{{headGrid.startX}}" min="0" aria-label="Head grid x" />
-                <input name="headGrid.startY" type="number" value="{{headGrid.startY}}" min="0" aria-label="Head grid y" />
-                <input name="headGrid.cellWidth" type="number" value="{{headGrid.cellWidth}}" min="1" aria-label="Head cell width" />
-                <input name="headGrid.cellHeight" type="number" value="{{headGrid.cellHeight}}" min="1" aria-label="Head cell height" />
+                <label class="coordinate-field"><span>X</span><input name="headGrid.startX" type="number" value="{{headGrid.startX}}" min="0" aria-label="Head grid x" /></label>
+                <label class="coordinate-field"><span>Y</span><input name="headGrid.startY" type="number" value="{{headGrid.startY}}" min="0" aria-label="Head grid y" /></label>
+                <label class="coordinate-field"><span>W</span><input name="headGrid.cellWidth" type="number" value="{{headGrid.cellWidth}}" min="1" aria-label="Head cell width" /></label>
+                <label class="coordinate-field"><span>H</span><input name="headGrid.cellHeight" type="number" value="{{headGrid.cellHeight}}" min="1" aria-label="Head cell height" /></label>
               </div>
             </div>
             <div class="grid-row">
               <label>{{localize "PORTRAIT_SPRITES.Creator.HeadGridLayout"}}</label>
               <div class="grid-inputs grid-layout-inputs small-coordinate-inputs">
-                <input name="headGrid.columns" type="number" value="{{headGrid.columns}}" min="1" aria-label="Head grid columns" />
-                <input name="headGrid.rows" type="number" value="{{headGrid.rows}}" min="1" aria-label="Head grid rows" />
+                <label class="coordinate-field"><span>Cols</span><input name="headGrid.columns" type="number" value="{{headGrid.columns}}" min="1" aria-label="Head grid columns" /></label>
+                <label class="coordinate-field"><span>Rows</span><input name="headGrid.rows" type="number" value="{{headGrid.rows}}" min="1" aria-label="Head grid rows" /></label>
               </div>
             </div>
             <div class="grid-row">
               <label>{{localize "PORTRAIT_SPRITES.Creator.HeadOffset"}}</label>
               <div class="grid-inputs grid-layout-inputs small-coordinate-inputs">
-                <input name="headOffset.x" type="number" value="{{headOffset.x}}" aria-label="Head offset x" />
-                <input name="headOffset.y" type="number" value="{{headOffset.y}}" aria-label="Head offset y" />
+                <label class="coordinate-field"><span>X</span><input name="headOffset.x" type="number" value="{{headOffset.x}}" aria-label="Head offset x" /></label>
+                <label class="coordinate-field"><span>Y</span><input name="headOffset.y" type="number" value="{{headOffset.y}}" aria-label="Head offset y" /></label>
               </div>
             </div>
           </section>
