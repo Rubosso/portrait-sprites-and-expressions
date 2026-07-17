@@ -324,3 +324,28 @@
   font-weight: 700;
   margin: 2px 0 0;
 }
+
+.portrait-sprite-creator,
+.portrait-sprite-creator .creator-section h3,
+.portrait-sprite-creator .creator-subsection h4,
+.portrait-sprite-creator .form-row > label,
+.portrait-sprite-creator .grid-row > label,
+.portrait-sprite-creator .expression-name-row,
+.portrait-sprite-creator .helper-text,
+.portrait-sprite-creator .image-dimensions {
+  color: #111827;
+}
+
+.portrait-sprite-creator .helper-text,
+.portrait-sprite-creator .coordinate-field span {
+  color: #374151;
+}
+
+.portrait-sprite-creator .sprite-preview-canvas {
+  cursor: grab;
+  touch-action: none;
+}
+
+.portrait-sprite-creator .sprite-preview-canvas:active {
+  cursor: grabbing;
+}

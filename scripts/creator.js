@@ -3,6 +3,8 @@ export class PortraitSpriteCreator extends Application {
     super(options);
     this.formData = this.#getDefaultData();
     this.activeTab = "coordinates";
+    this.previewImage = null;
+    this.dragState = null;
   }
 
   static get defaultOptions() {
@@ -78,6 +80,7 @@ export class PortraitSpriteCreator extends Application {
     this.#activateTab(html, this.activeTab);
     this.#renderPreview(html);
     this.#renderExpressionPreviews(html);
+    this.#activatePreviewDragging(html);
   }
 
   #activateTab(html, tab) {
@@ -165,7 +168,7 @@ export class PortraitSpriteCreator extends Application {
         this.formData.imageWidth = width;
         this.formData.imageHeight = height;
         if (configure && this.formData.configuredSpritesheet !== src) {
-          this.#autoConfigureFrames(width, height);
+          this.#autoConfigureFrames(image);
           this.formData.configuredSpritesheet = src;
         }
         resolve(image);
@@ -175,7 +178,19 @@ export class PortraitSpriteCreator extends Application {
     });
   }
 
-  #autoConfigureFrames(imageWidth, imageHeight) {
+  #autoConfigureFrames(image) {
+    const imageWidth = image.naturalWidth || image.width;
+    const imageHeight = image.naturalHeight || image.height;
+    const measured = this.#measureSpritesheet(image, imageWidth, imageHeight);
+    if (measured) {
+      this.formData.bodyFrame = measured.bodyFrame;
+      this.formData.headGrid = {
+        ...this.formData.headGrid,
+        ...measured.headGrid
+      };
+      return;
+    }
+
     const columns = Math.max(1, this.formData.headGrid.columns || 4);
     const rows = Math.max(1, this.formData.headGrid.rows || 4);
     const tallLayout = imageHeight >= imageWidth;
@@ -219,6 +234,107 @@ export class PortraitSpriteCreator extends Application {
       rows
     };
   }
+
+  #measureSpritesheet(image, imageWidth, imageHeight) {
+    const canvasElement = document.createElement("canvas");
+    canvasElement.width = imageWidth;
+    canvasElement.height = imageHeight;
+    const context = canvasElement.getContext("2d", { willReadFrequently: true });
+    if (!context) return null;
+
+    context.drawImage(image, 0, 0);
+    const { data } = context.getImageData(0, 0, imageWidth, imageHeight);
+    const rowCounts = Array(imageHeight).fill(0);
+    const columnCounts = Array(imageWidth).fill(0);
+
+    for (let y = 0; y < imageHeight; y += 1) {
+      for (let x = 0; x < imageWidth; x += 1) {
+        const index = (y * imageWidth + x) * 4;
+        const alpha = data[index + 3];
+        const red = data[index];
+        const green = data[index + 1];
+        const blue = data[index + 2];
+        const isVisible = alpha > 12 && (red > 12 || green > 12 || blue > 12);
+        if (isVisible) {
+          rowCounts[y] += 1;
+          columnCounts[x] += 1;
+        }
+      }
+    }
+
+    const rowBands = this.#findContentBands(rowCounts, Math.max(6, imageWidth * 0.03), 8);
+    if (rowBands.length < 2) return null;
+
+    const bodyBand = rowBands[0];
+    const expressionBands = rowBands.slice(1);
+    const gridStartY = expressionBands[0].start;
+    const gridEndY = expressionBands[expressionBands.length - 1].end;
+    const gridColumnCounts = Array(imageWidth).fill(0);
+
+    for (let y = gridStartY; y <= gridEndY; y += 1) {
+      for (let x = 0; x < imageWidth; x += 1) {
+        const index = (y * imageWidth + x) * 4;
+        const alpha = data[index + 3];
+        const red = data[index];
+        const green = data[index + 1];
+        const blue = data[index + 2];
+        if (alpha > 12 && (red > 12 || green > 12 || blue > 12)) {
+          gridColumnCounts[x] += 1;
+        }
+      }
+    }
+
+    const columnBands = this.#findContentBands(gridColumnCounts, Math.max(6, (gridEndY - gridStartY + 1) * 0.03), 8);
+    const columns = Math.max(1, columnBands.length || this.formData.headGrid.columns || 4);
+    const rows = Math.max(1, expressionBands.length || this.formData.headGrid.rows || 4);
+    const gridStartX = columnBands.length ? columnBands[0].start : 0;
+    const gridEndX = columnBands.length ? columnBands[columnBands.length - 1].end : imageWidth - 1;
+    const gridWidth = Math.max(1, gridEndX - gridStartX + 1);
+    const gridHeight = Math.max(1, gridEndY - gridStartY + 1);
+
+    return {
+      bodyFrame: {
+        x: 0,
+        y: Math.max(0, bodyBand.start),
+        width: imageWidth,
+        height: Math.max(1, gridStartY - bodyBand.start)
+      },
+      headGrid: {
+        startX: gridStartX,
+        startY: gridStartY,
+        cellWidth: Math.max(1, Math.ceil(gridWidth / columns)),
+        cellHeight: Math.max(1, Math.ceil(gridHeight / rows)),
+        columns,
+        rows
+      }
+    };
+  }
+
+  #findContentBands(counts, threshold, gapTolerance) {
+    const bands = [];
+    let start = null;
+    let lastContent = null;
+
+    counts.forEach((count, index) => {
+      if (count >= threshold) {
+        if (start === null) start = index;
+        lastContent = index;
+        return;
+      }
+
+      if (start !== null && lastContent !== null && index - lastContent > gapTolerance) {
+        bands.push({ start, end: lastContent });
+        start = null;
+        lastContent = null;
+      }
+    });
+
+    if (start !== null && lastContent !== null) {
+      bands.push({ start, end: lastContent });
+    }
+    return bands.filter(band => band.end - band.start > 4);
+  }
+
 
   #getExpressionCount() {
     return Math.max(0, this.formData.headGrid.columns * this.formData.headGrid.rows);
@@ -297,6 +413,7 @@ export class PortraitSpriteCreator extends Application {
     image.onload = () => {
       canvasElement.width = image.naturalWidth || image.width;
       canvasElement.height = image.naturalHeight || image.height;
+      this.previewImage = image;
       context.clearRect(0, 0, canvasElement.width, canvasElement.height);
       context.drawImage(image, 0, 0);
       this.formData.imageWidth = canvasElement.width;
@@ -345,26 +462,158 @@ export class PortraitSpriteCreator extends Application {
   }
 
 
+  #activatePreviewDragging(html) {
+    const canvasElement = html.find(".sprite-preview-canvas")[0];
+    if (!canvasElement) return;
+
+    canvasElement.addEventListener("pointerdown", event => {
+      if (!this.previewImage) return;
+      const point = this.#getCanvasPoint(canvasElement, event);
+      const hit = this.#hitTestPreview(point);
+      if (!hit) return;
+      event.preventDefault();
+      canvasElement.setPointerCapture(event.pointerId);
+      this.dragState = {
+        ...hit,
+        startPoint: point,
+        bodyFrame: { ...this.formData.bodyFrame },
+        headGrid: { ...this.formData.headGrid }
+      };
+    });
+
+    canvasElement.addEventListener("pointermove", event => {
+      if (!this.dragState) return;
+      event.preventDefault();
+      const point = this.#getCanvasPoint(canvasElement, event);
+      this.#applyPreviewDrag(point);
+      this.#syncCoordinateInputs(html);
+      this.#redrawPreview(canvasElement);
+    });
+
+    canvasElement.addEventListener("pointerup", event => {
+      if (!this.dragState) return;
+      event.preventDefault();
+      this.dragState = null;
+      this.render(false);
+    });
+  }
+
+  #getCanvasPoint(canvasElement, event) {
+    const rect = canvasElement.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvasElement.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvasElement.height
+    };
+  }
+
+  #hitTestPreview(point) {
+    const gridHit = this.#hitTestRect(point, this.#getGridRect(), "grid");
+    if (gridHit) return gridHit;
+
+    return this.#hitTestRect(point, this.formData.bodyFrame, "body");
+  }
+
+  #hitTestRect(point, rect, target) {
+    const tolerance = 12;
+    const inside = point.x >= rect.x - tolerance && point.x <= rect.x + rect.width + tolerance && point.y >= rect.y - tolerance && point.y <= rect.y + rect.height + tolerance;
+    if (!inside) return null;
+
+    const nearLeft = Math.abs(point.x - rect.x) <= tolerance;
+    const nearRight = Math.abs(point.x - (rect.x + rect.width)) <= tolerance;
+    const nearTop = Math.abs(point.y - rect.y) <= tolerance;
+    const nearBottom = Math.abs(point.y - (rect.y + rect.height)) <= tolerance;
+    const handle = `${nearTop ? "n" : ""}${nearBottom ? "s" : ""}${nearLeft ? "w" : ""}${nearRight ? "e" : ""}`;
+    return { target, mode: handle ? "resize" : "move", handle };
+  }
+
+  #applyPreviewDrag(point) {
+    const dx = Math.round(point.x - this.dragState.startPoint.x);
+    const dy = Math.round(point.y - this.dragState.startPoint.y);
+    if (this.dragState.target === "body") {
+      this.formData.bodyFrame = this.#resizeOrMoveRect(this.dragState.bodyFrame, dx, dy, this.dragState);
+      return;
+    }
+
+    const startRect = {
+      x: this.dragState.headGrid.startX,
+      y: this.dragState.headGrid.startY,
+      width: this.dragState.headGrid.cellWidth * this.dragState.headGrid.columns,
+      height: this.dragState.headGrid.cellHeight * this.dragState.headGrid.rows
+    };
+    const rect = this.#resizeOrMoveRect(startRect, dx, dy, this.dragState);
+    this.formData.headGrid.startX = rect.x;
+    this.formData.headGrid.startY = rect.y;
+    this.formData.headGrid.cellWidth = Math.max(1, Math.round(rect.width / this.formData.headGrid.columns));
+    this.formData.headGrid.cellHeight = Math.max(1, Math.round(rect.height / this.formData.headGrid.rows));
+  }
+
+  #resizeOrMoveRect(rect, dx, dy, dragState) {
+    const next = { ...rect };
+    if (dragState.mode === "move") {
+      next.x += dx;
+      next.y += dy;
+    } else {
+      if (dragState.handle.includes("w")) {
+        next.x += dx;
+        next.width -= dx;
+      }
+      if (dragState.handle.includes("e")) next.width += dx;
+      if (dragState.handle.includes("n")) {
+        next.y += dy;
+        next.height -= dy;
+      }
+      if (dragState.handle.includes("s")) next.height += dy;
+    }
+    next.width = Math.max(1, next.width);
+    next.height = Math.max(1, next.height);
+    return next;
+  }
+
+  #syncCoordinateInputs(html) {
+    const values = {
+      "bodyFrame.x": this.formData.bodyFrame.x,
+      "bodyFrame.y": this.formData.bodyFrame.y,
+      "bodyFrame.width": this.formData.bodyFrame.width,
+      "bodyFrame.height": this.formData.bodyFrame.height,
+      "headGrid.startX": this.formData.headGrid.startX,
+      "headGrid.startY": this.formData.headGrid.startY,
+      "headGrid.cellWidth": this.formData.headGrid.cellWidth,
+      "headGrid.cellHeight": this.formData.headGrid.cellHeight
+    };
+    Object.entries(values).forEach(([name, value]) => {
+      html.find(`[name='${name}']`).val(value);
+    });
+  }
+
+  #redrawPreview(canvasElement) {
+    if (!this.previewImage) return;
+    const context = canvasElement.getContext("2d");
+    if (!context) return;
+    context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    context.drawImage(this.previewImage, 0, 0);
+    this.#drawOverlays(context);
+  }
+
+  #getGridRect() {
+    return {
+      x: this.formData.headGrid.startX,
+      y: this.formData.headGrid.startY,
+      width: this.formData.headGrid.columns * this.formData.headGrid.cellWidth,
+      height: this.formData.headGrid.rows * this.formData.headGrid.cellHeight
+    };
+  }
+
+
   #drawOverlays(context) {
     context.save();
 
     context.strokeStyle = "rgba(248, 113, 113, 0.98)";
     context.lineWidth = 5;
-    context.strokeRect(
-      this.formData.bodyFrame.x,
-      this.formData.bodyFrame.y,
-      this.formData.bodyFrame.width,
-      this.formData.bodyFrame.height
-    );
+    this.#strokeInsetRect(context, this.formData.bodyFrame.x, this.formData.bodyFrame.y, this.formData.bodyFrame.width, this.formData.bodyFrame.height);
 
     context.strokeStyle = "rgba(244, 114, 182, 0.98)";
     context.lineWidth = 5;
-    context.strokeRect(
-      this.formData.headGrid.startX,
-      this.formData.headGrid.startY,
-      this.formData.headGrid.columns * this.formData.headGrid.cellWidth,
-      this.formData.headGrid.rows * this.formData.headGrid.cellHeight
-    );
+    this.#strokeInsetRect(context, this.formData.headGrid.startX, this.formData.headGrid.startY, this.formData.headGrid.columns * this.formData.headGrid.cellWidth, this.formData.headGrid.rows * this.formData.headGrid.cellHeight);
 
     context.lineWidth = 4;
     const count = this.#getExpressionCount();
@@ -374,14 +623,15 @@ export class PortraitSpriteCreator extends Application {
       const x = this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth;
       const y = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
       context.strokeStyle = "rgba(34, 211, 238, 0.98)";
-      context.strokeRect(x, y, this.formData.headGrid.cellWidth, this.formData.headGrid.cellHeight);
+      this.#strokeInsetRect(context, x, y, this.formData.headGrid.cellWidth, this.formData.headGrid.cellHeight);
     }
 
     context.restore();
   }
 
-  #getExpressionColor(index) {
-    const hue = (index * 47) % 360;
-    return `hsla(${hue}, 90%, 62%, 0.95)`;
+  #strokeInsetRect(context, x, y, width, height) {
+    const inset = context.lineWidth / 2;
+    context.strokeRect(x + inset, y + inset, Math.max(1, width - context.lineWidth), Math.max(1, height - context.lineWidth));
   }
+
 }
