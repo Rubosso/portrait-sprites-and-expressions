@@ -16,8 +16,8 @@
       "RotateRight": "Rotate right 15 degrees",
       "ScaleX": "Horizontal scale (%)",
       "ScaleY": "Vertical scale (%)",
-      "ResetSize": "Reset Size",
-      "ResetSizeHint": "Restore the sprite to its original 100% width and height"
+      "ResetSize": "Reset Transform",
+      "ResetSizeHint": "Restore the sprite to 0 degrees and its original 100% width and height"
     },
     "Creator": {
       "Title": "Portrait Sprite Creator",
