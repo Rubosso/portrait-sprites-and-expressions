@@ -1,6 +1,7 @@
 import { TEMPLATES } from "./constants.js";
 import { PortraitSpriteCreator } from "./creator.js";
 import { NO_EXPRESSION } from "./no-expression.js";
+import { updateSceneSprite } from "./scene-flags.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -325,8 +326,7 @@ class PortraitSpriteEditor extends PortraitSpriteCreator {
       currentExpression
     };
 
-    await globalThis.PortraitSprites.updateSprite(this.sprite.id, updates);
-    const spriteData = globalThis.PortraitSprites.getSprites().find(entry => entry.id === this.sprite.id);
+    const spriteData = await updateSceneSprite(this.sprite.id, entry => ({ ...entry, ...updates }));
     const layer = canvas.portraitSprites;
     if (layer && spriteData) {
       const wasSelected = this.sprite.selected;
