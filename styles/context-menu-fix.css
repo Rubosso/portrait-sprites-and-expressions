@@ -1,0 +1,21 @@
+.portrait-sprite-context-menu {
+  background: rgba(18, 18, 22, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+  height: auto !important;
+  min-width: 220px;
+  overflow: hidden;
+  padding: 5px;
+  pointer-events: auto;
+}
+
+.portrait-sprite-context-menu > .window-content,
+.portrait-sprite-context-menu .window-content {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+  padding: 0;
+}
