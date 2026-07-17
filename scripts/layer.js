@@ -1,7 +1,9 @@
 /**
  * Custom canvas layer for rendering portrait sprites
  */
-export class PortraitSpritesLayer extends CanvasLayer {
+const CanvasLayerBase = foundry.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
+
+export class PortraitSpritesLayer extends CanvasLayerBase {
   constructor() {
     super();
     this.sprites = new Map();

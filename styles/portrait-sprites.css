@@ -404,3 +404,8 @@
   max-width: 100%;
   object-fit: contain;
 }
+
+.portrait-sprite-creator .final-sprite-preview-canvas {
+  max-height: 45vh;
+  max-width: 360px;
+}

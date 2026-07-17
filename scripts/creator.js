@@ -574,7 +574,8 @@ export class PortraitSpriteCreator extends Application {
         ...hit,
         startPoint: point,
         bodyFrame: { ...this.formData.bodyFrame },
-        headGrid: { ...this.formData.headGrid }
+        headGrid: { ...this.formData.headGrid },
+        headOffset: { ...this.formData.headOffset }
       };
     });
 
@@ -604,6 +605,9 @@ export class PortraitSpriteCreator extends Application {
   }
 
   #hitTestPreview(point) {
+    const headHit = this.#hitTestRect(point, this.#getHeadPlacementRect(), "head");
+    if (headHit) return { ...headHit, mode: "move", handle: "" };
+
     const gridHit = this.#hitTestRect(point, this.#getGridRect(), "grid");
     if (gridHit) return gridHit;
 
@@ -628,6 +632,14 @@ export class PortraitSpriteCreator extends Application {
     const dy = Math.round(point.y - this.dragState.startPoint.y);
     if (this.dragState.target === "body") {
       this.formData.bodyFrame = this.#resizeOrMoveRect(this.dragState.bodyFrame, dx, dy, this.dragState);
+      return;
+    }
+
+    if (this.dragState.target === "head") {
+      this.formData.headOffset = {
+        x: this.dragState.headOffset.x + dx,
+        y: this.dragState.headOffset.y + dy
+      };
       return;
     }
 
@@ -702,6 +714,15 @@ export class PortraitSpriteCreator extends Application {
     };
   }
 
+  #getHeadPlacementRect() {
+    return {
+      x: this.formData.bodyFrame.x + this.formData.headOffset.x,
+      y: this.formData.bodyFrame.y + this.formData.headOffset.y,
+      width: this.formData.headGrid.cellWidth,
+      height: this.formData.headGrid.cellHeight
+    };
+  }
+
 
   #drawOverlays(context) {
     context.save();
@@ -709,6 +730,11 @@ export class PortraitSpriteCreator extends Application {
     context.strokeStyle = "rgba(248, 113, 113, 0.98)";
     context.lineWidth = 5;
     this.#strokeInsetRect(context, this.formData.bodyFrame.x, this.formData.bodyFrame.y, this.formData.bodyFrame.width, this.formData.bodyFrame.height);
+
+    const headRect = this.#getHeadPlacementRect();
+    context.strokeStyle = "rgba(250, 204, 21, 0.98)";
+    context.lineWidth = 6;
+    this.#strokeInsetRect(context, headRect.x, headRect.y, headRect.width, headRect.height);
 
     context.lineWidth = 4;
     const count = this.#getExpressionCount();
