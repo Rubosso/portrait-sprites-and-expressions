@@ -27,7 +27,7 @@ Hooks.once("setup", () => {
   // Register the custom canvas layer
   CONFIG.Canvas.layers.portraitSprites = {
     layerClass: PortraitSpritesLayer,
-    group: "primary"
+    group: "interface"
   };
 });
 
@@ -56,7 +56,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
         icon: "fas fa-mouse-pointer",
         order: 0,
         toggle: true,
-        active: false,
+        active: true,
         onChange: (_event, active) => {
           canvas.portraitSprites?.setInteractionActive?.(active);
         }
@@ -76,7 +76,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
       }
     },
     onChange: (_event, active) => {
-      if (active === false) canvas.portraitSprites?.setInteractionActive?.(false);
+      canvas.portraitSprites?.setInteractionActive?.(active !== false);
     }
   };
 });

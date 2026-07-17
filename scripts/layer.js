@@ -181,6 +181,8 @@ class PortraitSprite extends PIXI.Container {
     this.bodySprite = null;
     this.headSprite = null;
     this.baseTexture = null;
+    this.selectionFrame = null;
+    this.selected = false;
     this.isDragging = false;
     this.dragOffset = { x: 0, y: 0 };
   }
@@ -219,6 +221,10 @@ class PortraitSprite extends PIXI.Container {
     this.headSprite = new PIXI.Sprite(headTexture);
     this.headSprite.position.set(this.headOffset.x, this.headOffset.y);
     this.addChild(this.headSprite);
+
+    this.selectionFrame = new PIXI.Graphics();
+    this.selectionFrame.visible = false;
+    this.addChild(this.selectionFrame);
     this.#updateHitArea();
     
     this.on("rightclick", this._onRightClick.bind(this));
@@ -249,6 +255,20 @@ class PortraitSprite extends PIXI.Container {
     const maxX = Math.max(this.bodyFrame.width, this.headOffset.x + (this.headFrames[this.currentExpression]?.width ?? 0));
     const maxY = Math.max(this.bodyFrame.height, this.headOffset.y + (this.headFrames[this.currentExpression]?.height ?? 0));
     this.hitArea = new PIXI.Rectangle(minX, minY, maxX - minX, maxY - minY);
+    this.#drawSelectionFrame();
+  }
+
+  setSelected(selected) {
+    this.selected = Boolean(selected);
+    if (this.selectionFrame) this.selectionFrame.visible = this.selected;
+  }
+
+  #drawSelectionFrame() {
+    if (!this.selectionFrame || !this.hitArea) return;
+    this.selectionFrame.clear();
+    this.selectionFrame.lineStyle(2, 0xffc107, 1);
+    this.selectionFrame.drawRect(this.hitArea.x, this.hitArea.y, this.hitArea.width, this.hitArea.height);
+    this.selectionFrame.visible = this.selected;
   }
 
   /**
@@ -355,6 +375,7 @@ class PortraitSprite extends PIXI.Container {
    */
   _onRightClick(event) {
     event.stopPropagation?.();
+    this.setSelected(true);
     
     // Show expression HUD
     const hud = new PortraitSpriteHUD(this);
@@ -364,6 +385,7 @@ class PortraitSprite extends PIXI.Container {
   _onDragStart(event) {
     if (this.#getPointerButton(event) !== 0) return;
     event.stopPropagation?.();
+    this.setSelected(true);
     this.isDragging = true;
     const position = this.#getLocalPointerPosition(event);
     this.dragOffset.x = position.x - this.position.x;
@@ -401,6 +423,7 @@ class PortraitSprite extends PIXI.Container {
   destroy(options) {
     if (this.bodySprite) this.bodySprite.destroy();
     if (this.headSprite) this.headSprite.destroy();
+    if (this.selectionFrame) this.selectionFrame.destroy();
     super.destroy(options);
   }
 }
