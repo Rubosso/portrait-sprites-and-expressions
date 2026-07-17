@@ -4,6 +4,7 @@
 import { DEFAULT_BODY_FRAME, DEFAULT_HEAD_FRAME, DEFAULT_HEAD_OFFSET, TEMPLATES } from "./constants.js";
 import { getSceneSprites, updateSceneSprite } from "./scene-flags.js";
 const CanvasLayerBase = foundry.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class PortraitSpritesLayer extends CanvasLayerBase {
   constructor() {
@@ -312,7 +313,7 @@ class PortraitSprite extends PIXI.Container {
 /**
  * HUD for cycling through expressions
  */
-class PortraitSpriteHUD extends Application {
+class PortraitSpriteHUD extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(sprite) {
     super();
     this.sprite = sprite;
@@ -321,29 +322,38 @@ class PortraitSpriteHUD extends Application {
   /**
    * @override
    */
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: "portrait-sprite-hud",
-      template: TEMPLATES.hud,
-      classes: ["portrait-sprite-hud"],
+  static DEFAULT_OPTIONS = {
+    id: "portrait-sprite-hud",
+    classes: ["portrait-sprite-hud"],
+    position: {
       width: 200,
-      height: "auto",
-      popOut: true,
-      resizable: false,
-      title: game.i18n.localize("PORTRAIT_SPRITES.HUD.Title")
-    });
-  }
+      height: "auto"
+    },
+    window: {
+      title: "PORTRAIT_SPRITES.HUD.Title",
+      frame: true,
+      resizable: false
+    }
+  };
+
+  static PARTS = {
+    content: {
+      template: TEMPLATES.hud
+    }
+  };
 
   /**
    * @override
    */
-  getData() {
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
     const expressions = this.sprite.headFrames.map((frame, index) => ({
       index,
       label: frame.name || game.i18n.format("PORTRAIT_SPRITES.HUD.ExpressionNumber", { index: index + 1 }),
       isActive: index === this.sprite.currentExpression
     }));
     return {
+      ...context,
       currentExpression: this.sprite.currentExpression + 1,
       totalExpressions: this.sprite.headFrames.length,
       hasMultipleExpressions: this.sprite.headFrames.length > 1,
@@ -355,20 +365,20 @@ class PortraitSpriteHUD extends Application {
   /**
    * @override
    */
-  activateListeners(html) {
-    super.activateListeners(html);
+  _onRender(context, options) {
+    super._onRender(context, options);
     
-    html.find(".prev-expression").click(() => {
+    this.element.querySelector(".prev-expression")?.addEventListener("click", () => {
       this.sprite.previousExpression();
       this.render();
     });
     
-    html.find(".next-expression").click(() => {
+    this.element.querySelector(".next-expression")?.addEventListener("click", () => {
       this.sprite.nextExpression();
       this.render();
     });
 
-    html.find(".expression-select").on("change", event => {
+    this.element.querySelector(".expression-select")?.addEventListener("change", event => {
       const index = Number(event.currentTarget.value);
       if (Number.isNaN(index)) return;
       this.sprite.currentExpression = index;
@@ -377,7 +387,7 @@ class PortraitSpriteHUD extends Application {
       this.render();
     });
 
-    html.find(".expression-name-input").on("change", event => {
+    this.element.querySelector(".expression-name-input")?.addEventListener("change", event => {
       const name = event.currentTarget.value.trim();
       this.sprite.updateExpressionName(name);
       this.render();

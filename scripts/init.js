@@ -49,20 +49,27 @@ Hooks.on("getSceneControlButtons", (controls) => {
     order: Object.keys(controls).length,
     layer: "portraitSprites",
     tools: {
+      portraitSpritesSelect: {
+        name: "portraitSpritesSelect",
+        title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
+        icon: "fas fa-mouse-pointer",
+        order: 0,
+        visible: false,
+        onChange: () => {}
+      },
       portraitSpriteCreator: {
         name: "portraitSpriteCreator",
         title: game.i18n.localize("PORTRAIT_SPRITES.Creator.Tool"),
         icon: "fas fa-plus-circle",
-        order: 0,
+        order: 1,
         button: true,
-        onChange: (_event, active) => {
-          if (active === false) return;
+        onClick: () => {
           const creator = new PortraitSpriteCreator();
           creator.render(true);
         }
       }
     },
-    activeTool: "portraitSpriteCreator"
+    activeTool: "portraitSpritesSelect"
   };
 });
 

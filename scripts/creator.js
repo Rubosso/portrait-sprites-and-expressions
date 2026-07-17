@@ -1,6 +1,8 @@
 import { TEMPLATES } from "./constants.js";
 
-export class PortraitSpriteCreator extends Application {
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+export class PortraitSpriteCreator extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
     this.formData = this.#getDefaultData();
@@ -13,21 +15,31 @@ export class PortraitSpriteCreator extends Application {
     this.finalPreviewZoom = 4;
   }
 
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: "portrait-sprite-creator",
-      title: game.i18n.localize("PORTRAIT_SPRITES.Creator.Title"),
-      template: TEMPLATES.creator,
-      classes: ["portrait-sprite-creator"],
+  static DEFAULT_OPTIONS = {
+    id: "portrait-sprite-creator",
+    classes: ["portrait-sprite-creator"],
+    position: {
       width: 860,
-      height: "auto",
+      height: "auto"
+    },
+    window: {
+      title: "PORTRAIT_SPRITES.Creator.Title",
+      frame: true,
       resizable: true
-    });
-  }
+    }
+  };
 
-  getData() {
+  static PARTS = {
+    content: {
+      template: TEMPLATES.creator
+    }
+  };
+
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
     const expressionCount = this.#getExpressionCount();
     return {
+      ...context,
       ...this.formData,
       expressionCount,
       expressionNames: this.#getExpressionNames(expressionCount),
@@ -37,10 +49,10 @@ export class PortraitSpriteCreator extends Application {
     };
   }
 
-  activateListeners(html) {
-    super.activateListeners(html);
+  _onRender(context, options) {
+    super._onRender(context, options);
 
-    html.find("input, select").on("change", async event => {
+    this.element.querySelectorAll("input, select").forEach(element => element.addEventListener("change", async event => {
       const { name, value, type } = event.currentTarget;
       if (!name) return;
       const parsedValue = type === "number" ? Number(value) : value;
@@ -55,9 +67,9 @@ export class PortraitSpriteCreator extends Application {
         }
       }
       this.render(false);
-    });
+    }));
 
-    html.find("[data-action='pick-spritesheet']").on("click", event => {
+    this.element.querySelector("[data-action='pick-spritesheet']")?.addEventListener("click", event => {
       event.preventDefault();
       const picker = new FilePicker({
         type: "image",
@@ -71,30 +83,30 @@ export class PortraitSpriteCreator extends Application {
       picker.browse();
     });
 
-    html.find("[data-action='create-sprite']").on("click", async event => {
+    this.element.querySelector("[data-action='create-sprite']")?.addEventListener("click", async event => {
       event.preventDefault();
       await this.#createSprite();
     });
 
-    html.find(".creator-tab").on("click", event => {
+    this.element.querySelectorAll(".creator-tab").forEach(element => element.addEventListener("click", event => {
       event.preventDefault();
       const tab = event.currentTarget.dataset.tab;
       this.activeTab = tab;
-      this.#activateTab(html, tab);
-    });
+      this.#activateTab(this.element, tab);
+    }));
 
-    this.#activateTab(html, this.activeTab);
-    this.#renderPreview(html);
-    this.#renderExpressionPreviews(html);
-    this.#renderFinalPreview(html);
-    this.#activatePreviewDragging(html);
+    this.#activateTab(this.element, this.activeTab);
+    this.#renderPreview(this.element);
+    this.#renderExpressionPreviews(this.element);
+    this.#renderFinalPreview(this.element);
+    this.#activatePreviewDragging(this.element);
   }
 
   #activateTab(html, tab) {
-    html.find(".creator-tab").toggleClass("active", false);
-    html.find(`.creator-tab[data-tab='${tab}']`).toggleClass("active", true);
-    html.find(".creator-tab-panel").toggleClass("active", false);
-    html.find(`.creator-tab-panel[data-tab-panel='${tab}']`).toggleClass("active", true);
+    html.querySelectorAll(".creator-tab").forEach(element => element.classList.toggle("active", false));
+    html.querySelector(`.creator-tab[data-tab='${tab}']`)?.classList.toggle("active", true);
+    html.querySelectorAll(".creator-tab-panel").forEach(element => element.classList.toggle("active", false));
+    html.querySelector(`.creator-tab-panel[data-tab-panel='${tab}']`)?.classList.toggle("active", true);
   }
 
   async #createSprite() {
@@ -431,7 +443,7 @@ export class PortraitSpriteCreator extends Application {
   }
 
   #renderPreview(html) {
-    const canvasElement = html.find(".sprite-preview-canvas")[0];
+    const canvasElement = html.querySelector(".sprite-preview-canvas");
     if (!canvasElement) return;
     const context = canvasElement.getContext("2d");
     if (!context) return;
@@ -461,7 +473,8 @@ export class PortraitSpriteCreator extends Application {
       context.drawImage(image, 0, 0);
       this.formData.imageWidth = canvasElement.width;
       this.formData.imageHeight = canvasElement.height;
-      html.find(".image-dimensions").text(this.#getImageDimensionsText());
+      const imageDimensions = html.querySelector(".image-dimensions");
+      if (imageDimensions) imageDimensions.textContent = this.#getImageDimensionsText();
       this.#drawOverlays(context);
       this.#renderFinalPreview(html);
     };
@@ -473,7 +486,7 @@ export class PortraitSpriteCreator extends Application {
 
     const image = new Image();
     image.onload = () => {
-      html.find(".expression-preview-canvas").each((_, canvasElement) => {
+      html.querySelectorAll(".expression-preview-canvas").forEach(canvasElement => {
         const index = Number(canvasElement.dataset.expressionIndex);
         const context = canvasElement.getContext("2d");
         if (!context || Number.isNaN(index)) return;
@@ -504,14 +517,14 @@ export class PortraitSpriteCreator extends Application {
 
 
   #renderFinalPreview(html) {
-    const canvasElement = html.find(".final-sprite-preview-canvas")[0];
+    const canvasElement = html.querySelector(".final-sprite-preview-canvas");
     if (!canvasElement) return;
     if (this.finalPreviewInterval) {
       clearInterval(this.finalPreviewInterval);
       this.finalPreviewInterval = null;
     }
 
-    const magnifierCanvas = html.find(".final-magnifier-canvas")[0];
+    const magnifierCanvas = html.querySelector(".final-magnifier-canvas");
     this.#activateFinalPreviewMagnifier(canvasElement, magnifierCanvas);
 
     const draw = () => {
@@ -638,7 +651,7 @@ export class PortraitSpriteCreator extends Application {
 
 
   #activatePreviewDragging(html) {
-    const canvasElement = html.find(".sprite-preview-canvas")[0];
+    const canvasElement = html.querySelector(".sprite-preview-canvas");
     if (!canvasElement) return;
 
     canvasElement.addEventListener("pointerdown", event => {
@@ -770,7 +783,8 @@ export class PortraitSpriteCreator extends Application {
       "headOffset.y": this.formData.headOffset.y
     };
     Object.entries(values).forEach(([name, value]) => {
-      html.find(`[name='${name}']`).val(value);
+      const input = html.querySelector(`[name='${name}']`);
+      if (input) input.value = value;
     });
   }
 
