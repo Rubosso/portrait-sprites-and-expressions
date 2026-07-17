@@ -20,15 +20,17 @@ export class PortraitSpritesLayer extends CanvasLayer {
   /**
    * @override
    */
-  async _draw(options) {
-    await super._draw(options);
-    
+  async _draw(_options) {
+    this.#clearSprites();
+
     // Load sprites from scene flags
-    const spriteData = canvas.scene.getFlag("portrait-sprites-expressions", "sprites") || [];
-    
+    const spriteData = canvas.scene?.getFlag("portrait-sprites-and-expressions", "sprites") || [];
+
     for (const data of spriteData) {
       await this.createSprite(data);
     }
+
+    return this;
   }
 
   /**
@@ -73,11 +75,18 @@ export class PortraitSpritesLayer extends CanvasLayer {
    * @override
    */
   async _tearDown(options) {
+    this.#clearSprites();
+    return super._tearDown(options);
+  }
+
+  /**
+   * Destroy and forget all sprites currently drawn on the layer.
+   */
+  #clearSprites() {
     for (const sprite of this.sprites.values()) {
       sprite.destroy();
     }
     this.sprites.clear();
-    return super._tearDown(options);
   }
 }
 
@@ -235,7 +244,7 @@ class PortraitSprite extends PIXI.Container {
    * Save current state to scene flags
    */
   async _saveToScene() {
-    const sprites = canvas.scene.getFlag("portrait-sprites-expressions", "sprites") || [];
+    const sprites = canvas.scene.getFlag("portrait-sprites-and-expressions", "sprites") || [];
     const index = sprites.findIndex(s => s.id === this.id);
     
     if (index >= 0) {
@@ -243,18 +252,18 @@ class PortraitSprite extends PIXI.Container {
       sprites[index].headFrames = this.headFrames;
       sprites[index].x = this.position.x;
       sprites[index].y = this.position.y;
-      await canvas.scene.setFlag("portrait-sprites-expressions", "sprites", sprites);
+      await canvas.scene.setFlag("portrait-sprites-and-expressions", "sprites", sprites);
     }
   }
 
   async _savePosition() {
-    const sprites = canvas.scene.getFlag("portrait-sprites-expressions", "sprites") || [];
+    const sprites = canvas.scene.getFlag("portrait-sprites-and-expressions", "sprites") || [];
     const index = sprites.findIndex(s => s.id === this.id);
 
     if (index >= 0) {
       sprites[index].x = this.position.x;
       sprites[index].y = this.position.y;
-      await canvas.scene.setFlag("portrait-sprites-expressions", "sprites", sprites);
+      await canvas.scene.setFlag("portrait-sprites-and-expressions", "sprites", sprites);
     }
   }
 
@@ -314,7 +323,7 @@ class PortraitSpriteHUD extends Application {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: "portrait-sprite-hud",
-      template: "modules/portrait-sprites-expressions/templates/hud.html",
+      template: "modules/portrait-sprites-and-expressions/templates/hud.html",
       classes: ["portrait-sprite-hud"],
       width: 200,
       height: "auto",

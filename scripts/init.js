@@ -10,7 +10,7 @@ Hooks.once("init", () => {
   console.log("Portrait Sprites & Expressions | Initializing");
   
   // Register settings if needed in the future
-  game.settings.register("portrait-sprites-expressions", "version", {
+  game.settings.register("portrait-sprites-and-expressions", "version", {
     name: "Module Version",
     scope: "world",
     config: false,
@@ -81,7 +81,7 @@ window.PortraitSprites = {
       return null;
     }
     
-    const sprites = canvas.scene.getFlag("portrait-sprites-expressions", "sprites") || [];
+    const sprites = canvas.scene.getFlag("portrait-sprites-and-expressions", "sprites") || [];
     
     const spriteData = {
       id: foundry.utils.randomID(),
@@ -97,7 +97,7 @@ window.PortraitSprites = {
     };
     
     sprites.push(spriteData);
-    await canvas.scene.setFlag("portrait-sprites-expressions", "sprites", sprites);
+    await canvas.scene.setFlag("portrait-sprites-and-expressions", "sprites", sprites);
     
     // Create the sprite on the layer
     if (canvas.portraitSprites) {
@@ -114,10 +114,10 @@ window.PortraitSprites = {
   async removeSprite(id) {
     if (!canvas.scene) return;
     
-    const sprites = canvas.scene.getFlag("portrait-sprites-expressions", "sprites") || [];
+    const sprites = canvas.scene.getFlag("portrait-sprites-and-expressions", "sprites") || [];
     const filtered = sprites.filter(s => s.id !== id);
     
-    await canvas.scene.setFlag("portrait-sprites-expressions", "sprites", filtered);
+    await canvas.scene.setFlag("portrait-sprites-and-expressions", "sprites", filtered);
     
     // Remove from layer
     if (canvas.portraitSprites) {
@@ -131,7 +131,7 @@ window.PortraitSprites = {
    */
   getSprites() {
     if (!canvas.scene) return [];
-    return canvas.scene.getFlag("portrait-sprites-expressions", "sprites") || [];
+    return canvas.scene.getFlag("portrait-sprites-and-expressions", "sprites") || [];
   },
   
   /**
@@ -142,12 +142,12 @@ window.PortraitSprites = {
   async updateSprite(id, updates) {
     if (!canvas.scene) return;
     
-    const sprites = canvas.scene.getFlag("portrait-sprites-expressions", "sprites") || [];
+    const sprites = canvas.scene.getFlag("portrait-sprites-and-expressions", "sprites") || [];
     const index = sprites.findIndex(s => s.id === id);
     
     if (index >= 0) {
       sprites[index] = foundry.utils.mergeObject(sprites[index], updates);
-      await canvas.scene.setFlag("portrait-sprites-expressions", "sprites", sprites);
+      await canvas.scene.setFlag("portrait-sprites-and-expressions", "sprites", sprites);
       
       // Update on layer
       if (canvas.portraitSprites) {
