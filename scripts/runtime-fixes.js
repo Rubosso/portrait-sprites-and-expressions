@@ -4,6 +4,8 @@ const VIEWPORT_MARGIN = 64;
 const PICKER_MIN_HEIGHT = 360;
 const PICKER_DEFAULT_HEIGHT = 620;
 const PICKER_MIN_CARD_WIDTH = 112;
+const WRAPPED_CONTROLS = new WeakSet();
+const WRAPPED_TOOLS = new WeakSet();
 
 function getContentElement(root) {
   return root?.querySelector?.('[data-application-part="content"]')
@@ -212,17 +214,12 @@ export function installExpressionPickerAlignment(PortraitExpressionPicker) {
 }
 
 function disablePortraitLayer() {
-  canvas?.portraitSprites?.setInteractionActive?.(false);
+  globalThis.canvas?.portraitSprites?.setInteractionActive?.(false);
 }
 
 function wrapControlActivation(control) {
-  if (!control || control._portraitLayerIsolationWrapped) return;
-  Object.defineProperty(control, "_portraitLayerIsolationWrapped", {
-    value: true,
-    configurable: false,
-    enumerable: false,
-    writable: false
-  });
+  if (!control || typeof control !== "object" || WRAPPED_CONTROLS.has(control)) return;
+  WRAPPED_CONTROLS.add(control);
 
   const originalOnChange = control.onChange;
   control.onChange = function(event, active, ...args) {
@@ -231,13 +228,8 @@ function wrapControlActivation(control) {
   };
 
   for (const tool of Object.values(control.tools ?? {})) {
-    if (!tool || tool._portraitLayerIsolationWrapped) continue;
-    Object.defineProperty(tool, "_portraitLayerIsolationWrapped", {
-      value: true,
-      configurable: false,
-      enumerable: false,
-      writable: false
-    });
+    if (!tool || typeof tool !== "object" || WRAPPED_TOOLS.has(tool)) continue;
+    WRAPPED_TOOLS.add(tool);
     const originalToolOnChange = tool.onChange;
     tool.onChange = function(event, active, ...args) {
       if (active !== false) disablePortraitLayer();
