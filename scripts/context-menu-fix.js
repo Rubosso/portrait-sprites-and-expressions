@@ -14,6 +14,30 @@ function getNativeEvent(event) {
 function stopEvent(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
+  event?.stopImmediatePropagation?.();
+}
+
+function stopCanvasEvent(event) {
+  stopEvent(event);
+  const nativeEvent = getNativeEvent(event);
+  if (nativeEvent !== event) stopEvent(nativeEvent);
+}
+
+function resetCanvasMouseWorkflow() {
+  // Foundry's MouseInteractionManager keeps a global current manager while a
+  // click is eligible to become a drag. Cancel without forwarding the already
+  // prevented event, otherwise its defaultPrevented flag can preserve DRAG.
+  try {
+    canvas?.currentMouseManager?.cancel?.();
+  } catch (error) {
+    console.warn("Portrait Sprites | Failed to cancel the current mouse workflow", error);
+  }
+
+  try {
+    canvas?.mouseInteractionManager?.reset?.({ state: false });
+  } catch (error) {
+    console.warn("Portrait Sprites | Failed to reset the canvas mouse manager", error);
+  }
 }
 
 function getLocalPointerPosition(event, target) {
@@ -59,9 +83,8 @@ function createMenuRow(labelText, onActivate) {
   row.on("pointerout", () => drawMenuRow(background, false));
   row.on("pointerdown", async event => {
     if ((event?.button ?? event?.data?.button ?? 0) !== 0) return;
-    stopEvent(event);
-    const nativeEvent = getNativeEvent(event);
-    if (nativeEvent !== event) stopEvent(nativeEvent);
+    stopCanvasEvent(event);
+    resetCanvasMouseWorkflow();
     await onActivate();
   });
 
@@ -134,9 +157,9 @@ function clampMenuPosition(point) {
 }
 
 /**
- * Open the native PIXI action menu from Foundry's completed right-click event.
- * We intentionally do not listen for rightdown, allowing Foundry's right-drag
- * canvas-panning workflow to continue normally.
+ * Open the native PIXI action menu from a completed right-click. Consume the
+ * preceding right-button press and release on the sprite so Foundry's canvas
+ * pan manager never enters a drag-ready state for that gesture.
  */
 export function installContextMenuFix(
   PortraitSpritesLayer,
@@ -161,10 +184,11 @@ export function installContextMenuFix(
   PortraitSpritesLayer.prototype.setInteractionActive = function(active) {
     const result = originalLayerSetInteractionActive.call(this, active);
 
-    // The original layer used rightdown. Remove it so right-drag remains camera
-    // panning and only a completed right-click on a sprite opens this menu.
+    // The base portrait layer installed its own raw rightdown handler. Sprite
+    // gestures below own the complete right-button lifecycle instead.
     this.removeAllListeners?.("rightdown");
     if (!active) {
+      resetCanvasMouseWorkflow();
       for (const sprite of this.sprites?.values?.() ?? []) sprite.closeSpriteActionMenu?.();
     }
     return result;
@@ -183,12 +207,14 @@ export function installContextMenuFix(
 
   PortraitSprite.prototype.closeSpriteActionMenu = function() {
     if (this.spriteActionMenu) this.spriteActionMenu.visible = false;
+    resetCanvasMouseWorkflow();
   };
 
   PortraitSprite.prototype.openSpriteActionMenu = function(event) {
     const layer = this.parent;
     if (!layer?.interactionActive) return;
 
+    resetCanvasMouseWorkflow();
     for (const sprite of layer.sprites?.values?.() ?? []) {
       if (sprite !== this) sprite.closeSpriteActionMenu?.();
     }
@@ -224,15 +250,35 @@ export function installContextMenuFix(
   PortraitSprite.prototype.draw = async function(...args) {
     await originalDraw.apply(this, args);
 
-    // The original class installs both rightdown and rightclick handlers. Keep
-    // only a completed right-click, matching Foundry placeable HUD behavior.
+    // Foundry placeables consume the initial right-button press through their
+    // MouseInteractionManager. This sprite is not a PlaceableObject, so mirror
+    // that part explicitly, while still opening the menu on completed click.
     this.removeAllListeners?.("rightdown");
+    this.removeAllListeners?.("rightup");
+    this.removeAllListeners?.("rightupoutside");
     this.removeAllListeners?.("rightclick");
+
+    this.on("rightdown", event => {
+      if (!this.parent?.interactionActive) return;
+      stopCanvasEvent(event);
+      resetCanvasMouseWorkflow();
+      this.spriteRightButtonDown = true;
+    });
+
+    const finishRightButton = event => {
+      if (!this.spriteRightButtonDown) return;
+      stopCanvasEvent(event);
+      resetCanvasMouseWorkflow();
+      this.spriteRightButtonDown = false;
+    };
+
+    this.on("rightup", finishRightButton);
+    this.on("rightupoutside", finishRightButton);
     this.on("rightclick", event => {
       if (!this.parent?.interactionActive) return;
-      stopEvent(event);
-      const nativeEvent = getNativeEvent(event);
-      if (nativeEvent !== event) stopEvent(nativeEvent);
+      stopCanvasEvent(event);
+      resetCanvasMouseWorkflow();
+      this.spriteRightButtonDown = false;
       this.showHud(event);
     });
   };
@@ -244,6 +290,7 @@ export function installContextMenuFix(
   };
 
   PortraitSprite.prototype.destroy = function(options) {
+    this.spriteRightButtonDown = false;
     if (this.spriteActionMenu) {
       this.spriteActionMenu.destroy({ children: true });
       this.spriteActionMenu = null;
