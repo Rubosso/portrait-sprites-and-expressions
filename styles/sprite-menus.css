@@ -1,0 +1,191 @@
+/* Compact right-click launcher */
+.portrait-sprite-context-menu .window-content {
+  background: rgba(18, 18, 22, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  padding: 5px;
+}
+
+.sprite-context-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sprite-context-actions button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: #f3f4f6;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  min-height: 34px;
+  padding: 7px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.sprite-context-actions button:hover,
+.sprite-context-actions button:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+.sprite-context-actions i {
+  color: #fbbf24;
+  text-align: center;
+  width: 18px;
+}
+
+/* Visual expression picker */
+.portrait-expression-picker .window-content {
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.expression-picker-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.expression-picker-hint {
+  flex: 0 0 auto;
+  margin: 0 0 10px;
+}
+
+.expression-choice-grid {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 6px 8px 2px;
+}
+
+.expression-choice {
+  align-items: stretch;
+  background: rgba(0, 0, 0, 0.18);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.expression-choice:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.expression-choice.is-active {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35);
+}
+
+.expression-choice-preview {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  height: 210px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  width: 100%;
+}
+
+.expression-choice span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Creator and editor layout corrections */
+.portrait-sprite-creator .window-content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.portrait-sprite-creator .sprite-creator-form {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: min(78vh, 760px);
+  min-height: 500px;
+  overflow: hidden;
+}
+
+.portrait-sprite-creator .creator-tabs-top {
+  flex: 0 0 auto;
+}
+
+.portrait-sprite-creator .creator-tab-panel.active {
+  display: block;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.portrait-sprite-creator .creator-footer {
+  align-items: center;
+  background: var(--color-bg-option, rgba(0, 0, 0, 0.22));
+  border-top: 1px solid var(--color-border-light-primary);
+  flex: 0 0 auto;
+  margin-top: 8px;
+  min-height: 48px;
+  padding: 8px 2px 0;
+  position: relative;
+  z-index: 2;
+}
+
+.portrait-sprite-creator .expression-section {
+  border-bottom: 0;
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+.portrait-sprite-creator .expression-name-grid {
+  align-content: start;
+  max-height: calc(min(78vh, 760px) - 145px);
+  overflow: auto;
+  padding: 2px 8px 12px 2px;
+}
+
+.portrait-sprite-creator .final-preview-section {
+  box-sizing: border-box;
+  min-height: 100%;
+  width: 100%;
+}
+
+.portrait-sprite-creator .final-preview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  width: 100%;
+}
+
+.portrait-sprite-creator .final-sprite-preview-canvas {
+  display: block;
+  height: auto;
+  max-height: 58vh;
+  max-width: none;
+  object-fit: contain;
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .portrait-sprite-creator .final-preview-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .portrait-sprite-creator .final-magnifier-panel {
+    max-width: none;
+  }
+}
