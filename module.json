@@ -16,7 +16,8 @@
     "scripts/init.js"
   ],
   "styles": [
-    "styles/portrait-sprites.css"
+    "styles/portrait-sprites.css",
+    "styles/sprite-menus.css"
   ],
   "languages": [
     {
