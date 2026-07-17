@@ -24,18 +24,22 @@ export class PortraitSpriteCreator extends Application {
       expressionCount,
       expressionNames: this.#getExpressionNames(expressionCount),
       expressionPreviews: this.#getExpressionPreviews(expressionCount),
-      previewLayoutClass: this.#getPreviewLayoutClass()
+      previewLayoutClass: this.#getPreviewLayoutClass(),
+      imageDimensions: this.#getImageDimensionsText()
     };
   }
 
   activateListeners(html) {
     super.activateListeners(html);
 
-    html.find("input, select").on("change", event => {
+    html.find("input, select").on("change", async event => {
       const { name, value, type } = event.currentTarget;
       if (!name) return;
       const parsedValue = type === "number" ? Number(value) : value;
       foundry.utils.setProperty(this.formData, name, parsedValue);
+      if (name === "spritesheet") {
+        await this.#loadImageMetadata(value, { configure: true });
+      }
       if (name.startsWith("expressionNames")) {
         const index = Number(name.split(".").pop());
         if (!Number.isNaN(index)) {
@@ -50,8 +54,9 @@ export class PortraitSpriteCreator extends Application {
       const picker = new FilePicker({
         type: "image",
         current: this.formData.spritesheet,
-        callback: path => {
+        callback: async path => {
           this.formData.spritesheet = path;
+          await this.#loadImageMetadata(path, { configure: true });
           this.render();
         }
       });
@@ -132,7 +137,86 @@ export class PortraitSpriteCreator extends Application {
         x: 0,
         y: 0
       },
-      expressionNames: []
+      expressionNames: [],
+      imageWidth: 0,
+      imageHeight: 0,
+      configuredSpritesheet: ""
+    };
+  }
+
+  #getImageDimensionsText() {
+    if (!this.formData.imageWidth || !this.formData.imageHeight) {
+      return game.i18n.localize("PORTRAIT_SPRITES.Creator.ImageDimensionsUnknown");
+    }
+    return game.i18n.format("PORTRAIT_SPRITES.Creator.ImageDimensions", {
+      width: this.formData.imageWidth,
+      height: this.formData.imageHeight
+    });
+  }
+
+  #loadImageMetadata(src, { configure = false } = {}) {
+    if (!src) return Promise.resolve(null);
+
+    return new Promise(resolve => {
+      const image = new Image();
+      image.onload = () => {
+        const width = image.naturalWidth || image.width;
+        const height = image.naturalHeight || image.height;
+        this.formData.imageWidth = width;
+        this.formData.imageHeight = height;
+        if (configure && this.formData.configuredSpritesheet !== src) {
+          this.#autoConfigureFrames(width, height);
+          this.formData.configuredSpritesheet = src;
+        }
+        resolve(image);
+      };
+      image.onerror = () => resolve(null);
+      image.src = src;
+    });
+  }
+
+  #autoConfigureFrames(imageWidth, imageHeight) {
+    const columns = Math.max(1, this.formData.headGrid.columns || 4);
+    const rows = Math.max(1, this.formData.headGrid.rows || 4);
+    const tallLayout = imageHeight >= imageWidth;
+
+    if (tallLayout) {
+      const bodyHeight = Math.max(1, Math.round(imageHeight * 0.6));
+      const gridHeight = Math.max(1, imageHeight - bodyHeight);
+      this.formData.bodyFrame = {
+        x: 0,
+        y: 0,
+        width: imageWidth,
+        height: bodyHeight
+      };
+      this.formData.headGrid = {
+        ...this.formData.headGrid,
+        startX: 0,
+        startY: bodyHeight,
+        cellWidth: Math.max(1, Math.floor(imageWidth / columns)),
+        cellHeight: Math.max(1, Math.floor(gridHeight / rows)),
+        columns,
+        rows
+      };
+      return;
+    }
+
+    const bodyWidth = Math.max(1, Math.round(imageWidth * 0.45));
+    const gridWidth = Math.max(1, imageWidth - bodyWidth);
+    this.formData.bodyFrame = {
+      x: 0,
+      y: 0,
+      width: bodyWidth,
+      height: imageHeight
+    };
+    this.formData.headGrid = {
+      ...this.formData.headGrid,
+      startX: bodyWidth,
+      startY: 0,
+      cellWidth: Math.max(1, Math.floor(gridWidth / columns)),
+      cellHeight: Math.max(1, Math.floor(imageHeight / rows)),
+      columns,
+      rows
     };
   }
 
@@ -215,6 +299,9 @@ export class PortraitSpriteCreator extends Application {
       canvasElement.height = image.naturalHeight || image.height;
       context.clearRect(0, 0, canvasElement.width, canvasElement.height);
       context.drawImage(image, 0, 0);
+      this.formData.imageWidth = canvasElement.width;
+      this.formData.imageHeight = canvasElement.height;
+      html.find(".image-dimensions").text(this.#getImageDimensionsText());
       this.#drawOverlays(context);
     };
     image.src = this.formData.spritesheet;
@@ -249,7 +336,7 @@ export class PortraitSpriteCreator extends Application {
           canvasElement.width,
           canvasElement.height
         );
-        context.strokeStyle = this.#getExpressionColor(index);
+        context.strokeStyle = "rgba(34, 211, 238, 0.98)";
         context.lineWidth = 4;
         context.strokeRect(2, 2, canvasElement.width - 4, canvasElement.height - 4);
       });
@@ -286,7 +373,7 @@ export class PortraitSpriteCreator extends Application {
       const row = Math.floor(i / this.formData.headGrid.columns);
       const x = this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth;
       const y = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
-      context.strokeStyle = this.#getExpressionColor(i);
+      context.strokeStyle = "rgba(34, 211, 238, 0.98)";
       context.strokeRect(x, y, this.formData.headGrid.cellWidth, this.formData.headGrid.cellHeight);
     }
 

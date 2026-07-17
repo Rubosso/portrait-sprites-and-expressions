@@ -29,7 +29,7 @@
       "HeadOffset": "Head Offset (x, y)",
       "ExpressionLabel": "Expression {index}",
       "CreateSprite": "Create Sprite",
-      "PreviewHint": "Preview shows the original image at its natural aspect ratio, with the body box in red, the head grid box in pink, and expression frames in separate colors.",
+      "PreviewHint": "Preview shows the original image at its natural aspect ratio, with the body box in red, the head grid box in pink, and expression frames in cyan.",
       "PreviewPlaceholder": "Select a spritesheet to preview the grid.",
       "DefaultExpressionName": "Expression {index}",
       "Messages": {
@@ -41,7 +41,9 @@
       "Tabs": {
         "Coordinates": "Coordinates",
         "Names": "Expression Names"
-      }
+      },
+      "ImageDimensions": "Original image: {width} \u00d7 {height}px",
+      "ImageDimensionsUnknown": "Original image dimensions unavailable until a spritesheet is loaded."
     },
     "DefaultExpression": "Default Expression",
     "Tools": {

@@ -317,3 +317,10 @@
 .portrait-sprite-creator .creator-tabs .creator-tab {
   flex: 1 1 0;
 }
+
+.portrait-sprite-creator .image-dimensions {
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 2px 0 0;
+}
