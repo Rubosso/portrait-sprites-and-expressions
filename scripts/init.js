@@ -15,7 +15,7 @@ import { installContextMenuFix } from "./context-menu-fix.js";
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
 installSpriteMenus(PortraitSprite);
-installContextMenuFix(PortraitSprite, SpriteContextMenu);
+installContextMenuFix(PortraitSpritesLayer, PortraitSprite, SpriteContextMenu);
 
 function activatePortraitLayer() {
   const layer = canvas.portraitSprites;
