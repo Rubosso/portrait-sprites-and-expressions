@@ -16,6 +16,10 @@ import {
 } from "./sprite-menus.js";
 import { installContextMenuFix } from "./context-menu-fix.js";
 import { installScrollableApplicationLayouts } from "./scroll-layout.js";
+import {
+  installExpressionPickerAlignment,
+  installPortraitLayerIsolation
+} from "./runtime-fixes.js";
 
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
@@ -27,14 +31,13 @@ installContextMenuFix(
   PortraitExpressionPicker
 );
 installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPicker);
+installExpressionPickerAlignment(PortraitExpressionPicker);
+installPortraitLayerIsolation(PortraitSpritesLayer);
 
 function activatePortraitLayer() {
   const layer = canvas.portraitSprites;
   if (!layer) return;
 
-  // Foundry v13 InteractionLayer defaults this to false, which prevents
-  // pointer events from reaching interactive sprite children.
-  layer.interactiveChildren = true;
   layer.activate?.({ tool: "select" });
   layer.setInteractionActive?.(true);
 }
@@ -65,9 +68,11 @@ Hooks.once("setup", () => {
 Hooks.on("canvasReady", (canvas) => {
   log("Canvas Ready");
   
-  if (canvas.portraitSprites) {
-    canvas.portraitSprites.interactiveChildren = true;
-    log("Layer initialized with", canvas.portraitSprites.sprites.size, "sprites");
+  const layer = canvas.portraitSprites;
+  if (layer) {
+    // Keep the portrait layer passive unless it is the canvas' active layer.
+    layer.setInteractionActive?.(canvas.activeLayer === layer);
+    log("Layer initialized with", layer.sprites.size, "sprites");
   }
 });
 
