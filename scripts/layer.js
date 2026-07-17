@@ -101,6 +101,9 @@ export class PortraitSpritesLayer extends CanvasLayerBase {
 class PortraitSprite extends PIXI.Container {
   constructor(data) {
     super();
+
+    this.eventMode = "static";
+    this.cursor = "pointer";
     
     this.id = data.id;
     this.spritesheet = data.spritesheet;
@@ -163,10 +166,14 @@ class PortraitSprite extends PIXI.Container {
     this.headSprite.position.set(this.headOffset.x, this.headOffset.y);
     this.addChild(this.headSprite);
     
-    // Make interactive for HUD
+    // Make interactive for HUD and dragging. Foundry VTT v13 uses Pixi v7
+    // federated pointer events, so eventMode is required for reliable hit testing.
+    this.eventMode = "static";
+    this.cursor = "pointer";
     this.interactive = true;
     this.buttonMode = true;
     this.on("rightclick", this._onRightClick.bind(this));
+    this.on("rightdown", this._onRightClick.bind(this));
     this.on("pointerdown", this._onDragStart.bind(this));
     this.on("pointerup", this._onDragEnd.bind(this));
     this.on("pointerupoutside", this._onDragEnd.bind(this));
@@ -273,7 +280,7 @@ class PortraitSprite extends PIXI.Container {
    * Handle right-click to show HUD
    */
   _onRightClick(event) {
-    event.stopPropagation();
+    event.stopPropagation?.();
     
     // Show expression HUD
     const hud = new PortraitSpriteHUD(this);
@@ -281,23 +288,37 @@ class PortraitSprite extends PIXI.Container {
   }
 
   _onDragStart(event) {
-    if (event.data.button !== 0) return;
+    if (this.#getPointerButton(event) !== 0) return;
+    event.stopPropagation?.();
     this.isDragging = true;
-    const position = event.data.getLocalPosition(this.parent);
+    const position = this.#getLocalPointerPosition(event);
     this.dragOffset.x = position.x - this.position.x;
     this.dragOffset.y = position.y - this.position.y;
   }
 
   _onDragMove(event) {
     if (!this.isDragging) return;
-    const position = event.data.getLocalPosition(this.parent);
+    event.stopPropagation?.();
+    const position = this.#getLocalPointerPosition(event);
     this.position.set(position.x - this.dragOffset.x, position.y - this.dragOffset.y);
   }
 
-  async _onDragEnd() {
+  async _onDragEnd(event) {
     if (!this.isDragging) return;
+    event?.stopPropagation?.();
     this.isDragging = false;
     await this._savePosition();
+  }
+
+  #getPointerButton(event) {
+    return event?.button ?? event?.data?.button ?? 0;
+  }
+
+  #getLocalPointerPosition(event) {
+    if (typeof event?.getLocalPosition === "function") {
+      return event.getLocalPosition(this.parent);
+    }
+    return event.data.getLocalPosition(this.parent);
   }
 
   /**
