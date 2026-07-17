@@ -11,6 +11,9 @@ export class PortraitSpritesLayer extends InteractionLayerBase {
   constructor() {
     super();
     this.sprites = new Map();
+    this.interactionActive = false;
+    this.eventMode = "static";
+    this.interactive = true;
   }
 
   /**
@@ -49,7 +52,7 @@ export class PortraitSpritesLayer extends InteractionLayerBase {
     
     this.sprites.set(data.id, sprite);
     this.addChild(sprite);
-    sprite.setInteractive(this.active ?? true);
+    sprite.setInteractive(this.interactionActive);
     
     return sprite;
   }
@@ -57,17 +60,45 @@ export class PortraitSpritesLayer extends InteractionLayerBase {
   /**
    * @override
    */
-  _activate() {
-    super._activate?.();
-    this.#setSpritesInteractive(true);
+  activate(...args) {
+    const result = super.activate?.(...args);
+    this.setInteractionActive(true);
+    return result ?? this;
   }
 
   /**
    * @override
    */
-  _deactivate() {
-    this.#setSpritesInteractive(false);
-    super._deactivate?.();
+  deactivate(...args) {
+    this.setInteractionActive(false);
+    const result = super.deactivate?.(...args);
+    return result ?? this;
+  }
+
+  /**
+   * @override
+   */
+  _activate(...args) {
+    const result = super._activate?.(...args);
+    this.setInteractionActive(true);
+    return result;
+  }
+
+  /**
+   * @override
+   */
+  _deactivate(...args) {
+    this.setInteractionActive(false);
+    return super._deactivate?.(...args);
+  }
+
+  /**
+   * Enable or disable sprite pointer interactions for the selected tool.
+   * @param {boolean} active
+   */
+  setInteractionActive(active) {
+    this.interactionActive = Boolean(active);
+    this.#setSpritesInteractive(this.interactionActive);
   }
 
   /**
@@ -188,6 +219,7 @@ class PortraitSprite extends PIXI.Container {
     this.headSprite = new PIXI.Sprite(headTexture);
     this.headSprite.position.set(this.headOffset.x, this.headOffset.y);
     this.addChild(this.headSprite);
+    this.#updateHitArea();
     
     this.on("rightclick", this._onRightClick.bind(this));
     this.on("rightdown", this._onRightClick.bind(this));
@@ -207,6 +239,16 @@ class PortraitSprite extends PIXI.Container {
     this.cursor = active ? "pointer" : null;
     this.interactive = active;
     this.buttonMode = active;
+    if (this.bodySprite) this.bodySprite.eventMode = "none";
+    if (this.headSprite) this.headSprite.eventMode = "none";
+  }
+
+  #updateHitArea() {
+    const minX = Math.min(0, this.headOffset.x);
+    const minY = Math.min(0, this.headOffset.y);
+    const maxX = Math.max(this.bodyFrame.width, this.headOffset.x + (this.headFrames[this.currentExpression]?.width ?? 0));
+    const maxY = Math.max(this.bodyFrame.height, this.headOffset.y + (this.headFrames[this.currentExpression]?.height ?? 0));
+    this.hitArea = new PIXI.Rectangle(minX, minY, maxX - minX, maxY - minY);
   }
 
   /**
@@ -221,6 +263,7 @@ class PortraitSprite extends PIXI.Container {
       if (this.headSprite) {
         this.headSprite.position.set(this.headOffset.x, this.headOffset.y);
       }
+      this.#updateHitArea();
     }
     if (updates.headFrames) {
       this.headFrames = updates.headFrames;
@@ -228,10 +271,12 @@ class PortraitSprite extends PIXI.Container {
         this.currentExpression = Math.min(this.currentExpression, this.headFrames.length - 1);
       }
       this.updateExpression();
+      this.#updateHitArea();
     }
     if (updates.currentExpression !== undefined) {
       this.currentExpression = updates.currentExpression;
       this.updateExpression();
+      this.#updateHitArea();
     }
   }
 

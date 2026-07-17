@@ -48,12 +48,24 @@ Hooks.on("getSceneControlButtons", (controls) => {
     icon: "fas fa-user-circle",
     order: Object.keys(controls).length,
     layer: "portraitSprites",
+    activeTool: "select",
     tools: {
+      select: {
+        name: "select",
+        title: game.i18n.localize("CONTROLS.CommonSelect"),
+        icon: "fas fa-mouse-pointer",
+        order: 0,
+        toggle: true,
+        active: false,
+        onChange: (_event, active) => {
+          canvas.portraitSprites?.setInteractionActive?.(active);
+        }
+      },
       portraitSpriteCreator: {
         name: "portraitSpriteCreator",
         title: game.i18n.localize("PORTRAIT_SPRITES.Creator.Tool"),
         icon: "fas fa-plus-circle",
-        order: 0,
+        order: 1,
         button: true,
         onChange: (_event, active) => {
           if (active === false) return;
@@ -63,7 +75,9 @@ Hooks.on("getSceneControlButtons", (controls) => {
         }
       }
     },
-    onChange: () => {}
+    onChange: (_event, active) => {
+      if (active === false) canvas.portraitSprites?.setInteractionActive?.(false);
+    }
   };
 });
 
