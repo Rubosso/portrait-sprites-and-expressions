@@ -112,9 +112,16 @@
   </div>
 
   <footer class="creator-footer">
-    <button type="button" class="create-sprite" data-action="create-sprite">
-      <i class="fas fa-check"></i>
-      {{localize "PORTRAIT_SPRITES.Creator.CreateSprite"}}
-    </button>
+    {{#if isEditing}}
+      <button type="button" class="create-sprite" data-action="save-sprite">
+        <i class="fas fa-check"></i>
+        {{localize "PORTRAIT_SPRITES.Creator.SaveSprite"}}
+      </button>
+    {{else}}
+      <button type="button" class="create-sprite" data-action="create-sprite">
+        <i class="fas fa-check"></i>
+        {{localize "PORTRAIT_SPRITES.Creator.CreateSprite"}}
+      </button>
+    {{/if}}
   </footer>
 </form>
