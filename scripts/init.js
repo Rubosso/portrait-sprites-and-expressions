@@ -5,8 +5,11 @@
 
 import { createPortraitSpritesApi, MODULE_ID } from "./api.js";
 import { log } from "./constants.js";
-import { PortraitSpritesLayer } from "./layer.js";
+import { PortraitSprite, PortraitSpriteHUD, PortraitSpritesLayer } from "./layer.js";
 import { PortraitSpriteCreator } from "./creator.js";
+import { installNoExpressionSupport } from "./no-expression.js";
+
+installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 
 function activatePortraitLayer() {
   const layer = canvas.portraitSprites;
