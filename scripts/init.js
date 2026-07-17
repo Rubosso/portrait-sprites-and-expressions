@@ -9,11 +9,13 @@ import { PortraitSprite, PortraitSpriteHUD, PortraitSpritesLayer } from "./layer
 import { PortraitSpriteCreator } from "./creator.js";
 import { installNoExpressionSupport } from "./no-expression.js";
 import { installTransformSupport } from "./transform.js";
-import { installSpriteMenus } from "./sprite-menus.js";
+import { installSpriteMenus, SpriteContextMenu } from "./sprite-menus.js";
+import { installContextMenuFix } from "./context-menu-fix.js";
 
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
 installSpriteMenus(PortraitSprite);
+installContextMenuFix(PortraitSprite, SpriteContextMenu);
 
 function activatePortraitLayer() {
   const layer = canvas.portraitSprites;
