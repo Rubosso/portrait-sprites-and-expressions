@@ -1,29 +1,27 @@
 <div class="portrait-sprite-hud-content">
-  {{#if hasMultipleExpressions}}
-    <div class="expression-controls">
-      <button class="prev-expression" type="button" title="{{localize 'PORTRAIT_SPRITES.HUD.PrevExpression'}}">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-      <div class="expression-label">
-        {{localize 'PORTRAIT_SPRITES.HUD.ExpressionLabel' current=currentExpression total=totalExpressions}}
-      </div>
-      <button class="next-expression" type="button" title="{{localize 'PORTRAIT_SPRITES.HUD.NextExpression'}}">
-        <i class="fas fa-chevron-right"></i>
-      </button>
+  <div class="expression-controls">
+    <button class="prev-expression" type="button" title="{{localize 'PORTRAIT_SPRITES.HUD.PrevExpression'}}">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <div class="expression-label">
+      {{currentExpressionLabel}}
     </div>
-    <div class="expression-select-row">
-      <label for="portrait-expression-select">{{localize 'PORTRAIT_SPRITES.HUD.ExpressionSelect'}}</label>
-      <select id="portrait-expression-select" class="expression-select">
-        {{#each expressions}}
-          <option value="{{this.index}}" {{#if this.isActive}}selected{{/if}}>{{this.label}}</option>
-        {{/each}}
-      </select>
-    </div>
-  {{else}}
-    <p>{{localize 'PORTRAIT_SPRITES.HUD.SingleExpression'}}</p>
-  {{/if}}
-  <div class="expression-name-row">
-    <label for="portrait-expression-name">{{localize 'PORTRAIT_SPRITES.HUD.ExpressionName'}}</label>
-    <input id="portrait-expression-name" class="expression-name-input" type="text" value="{{currentExpressionName}}" />
+    <button class="next-expression" type="button" title="{{localize 'PORTRAIT_SPRITES.HUD.NextExpression'}}">
+      <i class="fas fa-chevron-right"></i>
+    </button>
   </div>
+  <div class="expression-select-row">
+    <label for="portrait-expression-select">{{localize 'PORTRAIT_SPRITES.HUD.ExpressionSelect'}}</label>
+    <select id="portrait-expression-select" class="expression-select">
+      {{#each expressions}}
+        <option value="{{this.index}}" {{#if this.isActive}}selected{{/if}}>{{this.label}}</option>
+      {{/each}}
+    </select>
+  </div>
+  {{#if hasSelectedExpression}}
+    <div class="expression-name-row">
+      <label for="portrait-expression-name">{{localize 'PORTRAIT_SPRITES.HUD.ExpressionName'}}</label>
+      <input id="portrait-expression-name" class="expression-name-input" type="text" value="{{currentExpressionName}}" />
+    </div>
+  {{/if}}
 </div>
