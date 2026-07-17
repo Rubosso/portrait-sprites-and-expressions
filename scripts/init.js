@@ -15,6 +15,7 @@ import {
   PortraitSpriteEditor
 } from "./sprite-menus.js";
 import { installContextMenuFix } from "./context-menu-fix.js";
+import { installScrollableApplicationLayouts } from "./scroll-layout.js";
 
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
@@ -25,6 +26,7 @@ installContextMenuFix(
   PortraitSpriteEditor,
   PortraitExpressionPicker
 );
+installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPicker);
 
 function activatePortraitLayer() {
   const layer = canvas.portraitSprites;
