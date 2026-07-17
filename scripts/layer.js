@@ -1,6 +1,8 @@
 /**
  * Custom canvas layer for rendering portrait sprites
  */
+import { DEFAULT_BODY_FRAME, DEFAULT_HEAD_FRAME, DEFAULT_HEAD_OFFSET, TEMPLATES } from "./constants.js";
+import { getSceneSprites, updateSceneSprite } from "./scene-flags.js";
 const CanvasLayerBase = foundry.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
 
 export class PortraitSpritesLayer extends CanvasLayerBase {
@@ -26,7 +28,7 @@ export class PortraitSpritesLayer extends CanvasLayerBase {
     this.#clearSprites();
 
     // Load sprites from scene flags
-    const spriteData = canvas.scene?.getFlag("portrait-sprites-and-expressions", "sprites") || [];
+    const spriteData = getSceneSprites();
 
     for (const data of spriteData) {
       await this.createSprite(data);
@@ -104,16 +106,19 @@ class PortraitSprite extends PIXI.Container {
     this.position.set(data.x || 0, data.y || 0);
     
     // Body frame configuration
-    this.bodyFrame = data.bodyFrame || { x: 0, y: 0, width: 100, height: 100 };
+    this.bodyFrame = data.bodyFrame || { ...DEFAULT_BODY_FRAME };
     
     // Head frames configuration (array of frames for different expressions)
     this.headFrames = data.headFrames || [
-      { x: 0, y: 100, width: 100, height: 50, name: game.i18n.localize("PORTRAIT_SPRITES.DefaultExpression") }
+      {
+        ...DEFAULT_HEAD_FRAME,
+        name: game.i18n.localize("PORTRAIT_SPRITES.DefaultExpression")
+      }
     ];
     this.currentExpression = data.currentExpression || 0;
     
     // Position of head relative to body
-    this.headOffset = data.headOffset || { x: 0, y: 0 };
+    this.headOffset = data.headOffset || { ...DEFAULT_HEAD_OFFSET };
     
     this.bodySprite = null;
     this.headSprite = null;
@@ -246,27 +251,21 @@ class PortraitSprite extends PIXI.Container {
    * Save current state to scene flags
    */
   async _saveToScene() {
-    const sprites = canvas.scene.getFlag("portrait-sprites-and-expressions", "sprites") || [];
-    const index = sprites.findIndex(s => s.id === this.id);
-    
-    if (index >= 0) {
-      sprites[index].currentExpression = this.currentExpression;
-      sprites[index].headFrames = this.headFrames;
-      sprites[index].x = this.position.x;
-      sprites[index].y = this.position.y;
-      await canvas.scene.setFlag("portrait-sprites-and-expressions", "sprites", sprites);
-    }
+    await updateSceneSprite(this.id, sprite => ({
+      ...sprite,
+      currentExpression: this.currentExpression,
+      headFrames: this.headFrames,
+      x: this.position.x,
+      y: this.position.y
+    }));
   }
 
   async _savePosition() {
-    const sprites = canvas.scene.getFlag("portrait-sprites-and-expressions", "sprites") || [];
-    const index = sprites.findIndex(s => s.id === this.id);
-
-    if (index >= 0) {
-      sprites[index].x = this.position.x;
-      sprites[index].y = this.position.y;
-      await canvas.scene.setFlag("portrait-sprites-and-expressions", "sprites", sprites);
-    }
+    await updateSceneSprite(this.id, sprite => ({
+      ...sprite,
+      x: this.position.x,
+      y: this.position.y
+    }));
   }
 
   /**
@@ -325,7 +324,7 @@ class PortraitSpriteHUD extends Application {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: "portrait-sprite-hud",
-      template: "modules/portrait-sprites-and-expressions/templates/hud.html",
+      template: TEMPLATES.hud,
       classes: ["portrait-sprite-hud"],
       width: 200,
       height: "auto",

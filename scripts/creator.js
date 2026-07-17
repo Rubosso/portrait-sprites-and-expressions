@@ -1,3 +1,5 @@
+import { TEMPLATES } from "./constants.js";
+
 export class PortraitSpriteCreator extends Application {
   constructor(options = {}) {
     super(options);
@@ -15,7 +17,7 @@ export class PortraitSpriteCreator extends Application {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: "portrait-sprite-creator",
       title: game.i18n.localize("PORTRAIT_SPRITES.Creator.Title"),
-      template: "modules/portrait-sprites-and-expressions/templates/creator.html",
+      template: TEMPLATES.creator,
       classes: ["portrait-sprite-creator"],
       width: 860,
       height: "auto",

@@ -125,7 +125,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 If you encounter any issues or have questions:
 1. Check the [EXAMPLES.md](EXAMPLES.md) file for usage examples
-2. Review the [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) for technical details
+2. Review the [ARCHITECTURE.md](ARCHITECTURE.md) and [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) for technical details
 3. Open an issue on the [GitHub repository](https://github.com/Rubosso/Portrait-Sprites-Expressions/issues)
 
 ## Roadmap
