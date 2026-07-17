@@ -4,9 +4,10 @@
 import { DEFAULT_BODY_FRAME, DEFAULT_HEAD_FRAME, DEFAULT_HEAD_OFFSET, TEMPLATES } from "./constants.js";
 import { getSceneSprites, updateSceneSprite } from "./scene-flags.js";
 const CanvasLayerBase = foundry.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
+const InteractionLayerBase = foundry.canvas?.layers?.InteractionLayer ?? globalThis.InteractionLayer ?? CanvasLayerBase;
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class PortraitSpritesLayer extends CanvasLayerBase {
+export class PortraitSpritesLayer extends InteractionLayerBase {
   constructor() {
     super();
     this.sprites = new Map();
@@ -48,8 +49,25 @@ export class PortraitSpritesLayer extends CanvasLayerBase {
     
     this.sprites.set(data.id, sprite);
     this.addChild(sprite);
+    sprite.setInteractive(this.active ?? true);
     
     return sprite;
+  }
+
+  /**
+   * @override
+   */
+  _activate() {
+    super._activate?.();
+    this.#setSpritesInteractive(true);
+  }
+
+  /**
+   * @override
+   */
+  _deactivate() {
+    this.#setSpritesInteractive(false);
+    super._deactivate?.();
   }
 
   /**
@@ -93,6 +111,12 @@ export class PortraitSpritesLayer extends CanvasLayerBase {
     }
     this.sprites.clear();
   }
+
+  #setSpritesInteractive(active) {
+    for (const sprite of this.sprites.values()) {
+      sprite.setInteractive(active);
+    }
+  }
 }
 
 /**
@@ -102,8 +126,7 @@ class PortraitSprite extends PIXI.Container {
   constructor(data) {
     super();
 
-    this.eventMode = "static";
-    this.cursor = "pointer";
+    this.setInteractive(false);
     
     this.id = data.id;
     this.spritesheet = data.spritesheet;
@@ -166,18 +189,24 @@ class PortraitSprite extends PIXI.Container {
     this.headSprite.position.set(this.headOffset.x, this.headOffset.y);
     this.addChild(this.headSprite);
     
-    // Make interactive for HUD and dragging. Foundry VTT v13 uses Pixi v7
-    // federated pointer events, so eventMode is required for reliable hit testing.
-    this.eventMode = "static";
-    this.cursor = "pointer";
-    this.interactive = true;
-    this.buttonMode = true;
     this.on("rightclick", this._onRightClick.bind(this));
     this.on("rightdown", this._onRightClick.bind(this));
     this.on("pointerdown", this._onDragStart.bind(this));
     this.on("pointerup", this._onDragEnd.bind(this));
     this.on("pointerupoutside", this._onDragEnd.bind(this));
     this.on("pointermove", this._onDragMove.bind(this));
+  }
+
+  /**
+   * Enable or disable pointer interaction for this sprite. Foundry activates
+   * interaction-layer children only while their layer is selected.
+   * @param {boolean} active
+   */
+  setInteractive(active) {
+    this.eventMode = active ? "static" : "none";
+    this.cursor = active ? "pointer" : null;
+    this.interactive = active;
+    this.buttonMode = active;
   }
 
   /**
