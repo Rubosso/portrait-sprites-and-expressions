@@ -24,10 +24,11 @@ Hooks.once("init", () => {
 Hooks.once("setup", () => {
   log("Setup");
   
-  // Register the custom canvas layer
+  // Keep the layer in the primary canvas group so its coordinates use the
+  // same panning and zoom transform as canvas.stage.
   CONFIG.Canvas.layers.portraitSprites = {
     layerClass: PortraitSpritesLayer,
-    group: "interface"
+    group: "primary"
   };
 });
 
@@ -55,8 +56,6 @@ Hooks.on("getSceneControlButtons", (controls) => {
         title: game.i18n.localize("CONTROLS.CommonSelect"),
         icon: "fas fa-mouse-pointer",
         order: 0,
-        toggle: true,
-        active: true,
         onChange: (_event, active) => {
           canvas.portraitSprites?.setInteractionActive?.(active);
         }
