@@ -8,7 +8,7 @@ export class PortraitSpriteCreator extends Application {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: "portrait-sprite-creator",
       title: game.i18n.localize("PORTRAIT_SPRITES.Creator.Title"),
-      template: "modules/portrait-sprites-expressions/templates/creator.html",
+      template: "modules/portrait-sprites-and-expressions/templates/creator.html",
       classes: ["portrait-sprite-creator"],
       width: 620,
       height: "auto",
