@@ -27,7 +27,7 @@
     },
     "ExpressionPicker": {
       "Title": "Choose Expression",
-      "Hint": "Select an expression by its final composite preview. No Expression shows the body sprite without a head layer."
+      "Hint": "Select an expression from its face thumbnail. No Expression removes the head layer."
     },
     "Creator": {
       "Title": "Portrait Sprite Creator",
