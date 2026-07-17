@@ -54,7 +54,6 @@ Hooks.on("getSceneControlButtons", (controls) => {
         title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
         icon: "fas fa-mouse-pointer",
         order: 0,
-        visible: false,
         onChange: () => {}
       },
       portraitSpriteCreator: {
@@ -63,12 +62,15 @@ Hooks.on("getSceneControlButtons", (controls) => {
         icon: "fas fa-plus-circle",
         order: 1,
         button: true,
-        onClick: () => {
+        onChange: (_event, active) => {
+          if (active === false) return;
+
           const creator = new PortraitSpriteCreator();
           creator.render(true);
         }
       }
     },
+    onChange: () => {},
     activeTool: "portraitSpritesSelect"
   };
 });

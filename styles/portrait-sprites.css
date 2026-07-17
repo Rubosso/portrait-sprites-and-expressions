@@ -64,8 +64,7 @@
 }
 
 .portrait-sprite-creator {
-  background: #0f172a;
-  color: #e2e8f0;
+  color: inherit;
 }
 
 .portrait-sprite-creator .creator-section {
@@ -76,7 +75,6 @@
 .portrait-sprite-creator .creator-section h3 {
   margin: 0 0 8px;
   font-size: 16px;
-  color: #f8fafc;
 }
 
 .portrait-sprite-creator .form-row,
@@ -99,10 +97,6 @@
 
 .portrait-sprite-creator input[type="text"],
 .portrait-sprite-creator input[type="number"] {
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 4px;
-  color: #f8fafc;
   padding: 6px 8px;
 }
 
@@ -112,10 +106,6 @@
 }
 
 .portrait-sprite-creator .file-picker {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 4px;
-  color: #f8fafc;
   padding: 6px 10px;
   cursor: pointer;
 }
@@ -153,17 +143,10 @@
 }
 
 .portrait-sprite-creator .create-sprite {
-  background: #2563eb;
-  border: none;
-  border-radius: 6px;
-  color: #f8fafc;
   padding: 8px 14px;
   cursor: pointer;
 }
 
-.portrait-sprite-creator .create-sprite:hover {
-  background: #1d4ed8;
-}
 
 /* Layer controls */
 #controls .scene-control[data-control="portraitSprites"] {
@@ -212,17 +195,14 @@
 }
 
 .portrait-sprite-creator .creator-tab {
-  background: #1e293b;
-  border: 1px solid #334155;
   border-radius: 5px;
-  color: #cbd5e1;
   cursor: pointer;
   padding: 6px 10px;
 }
 
 .portrait-sprite-creator .creator-tab.active {
-  background: #2563eb;
-  color: #f8fafc;
+  box-shadow: inset 0 -2px 0 var(--color-border-highlight, #9f9275);
+  font-weight: 700;
 }
 
 .portrait-sprite-creator .creator-tab-panel {
@@ -238,7 +218,6 @@
 }
 
 .portrait-sprite-creator .creator-subsection h4 {
-  color: #f8fafc;
   font-size: 13px;
   margin: 0 0 8px;
 }
@@ -319,7 +298,6 @@
 }
 
 .portrait-sprite-creator .image-dimensions {
-  color: #cbd5e1;
   font-size: 12px;
   font-weight: 700;
   margin: 2px 0 0;
