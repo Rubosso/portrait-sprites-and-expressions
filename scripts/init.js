@@ -40,26 +40,29 @@ Hooks.on("canvasReady", (canvas) => {
 });
 
 Hooks.on("getSceneControlButtons", (controls) => {
-  // Add portrait sprites layer control
-  controls.push({
+  // Foundry VTT v13 provides scene controls as a keyed record instead of an array.
+  controls.portraitSprites = {
     name: "portraitSprites",
     title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
     icon: "fas fa-user-circle",
+    order: Object.keys(controls).length,
     layer: "portraitSprites",
-    tools: [
-      {
+    tools: {
+      portraitSpriteCreator: {
         name: "portraitSpriteCreator",
         title: game.i18n.localize("PORTRAIT_SPRITES.Creator.Tool"),
         icon: "fas fa-plus-circle",
-        onClick: () => {
+        order: 0,
+        button: true,
+        onChange: (_event, active) => {
+          if (active === false) return;
           const creator = new PortraitSpriteCreator();
           creator.render(true);
-        },
-        button: true
+        }
       }
-    ],
-    activeTool: "select"
-  });
+    },
+    activeTool: "portraitSpriteCreator"
+  };
 });
 
 // API for managing portrait sprites
