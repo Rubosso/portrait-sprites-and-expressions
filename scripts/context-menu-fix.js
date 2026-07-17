@@ -1,12 +1,18 @@
 const CONTEXT_MENU_WIDTH = 220;
 const CONTEXT_MENU_MARGIN = 8;
-const CONTEXT_MENU_EVENT_TIMEOUT = 750;
+const ACTION_BUTTON_SIZE = 24;
+const ACTION_BUTTON_X_OFFSET = 12;
+const ACTION_BUTTON_Y_OFFSET = 28;
 
 function getNativeEvent(event) {
   return event?.nativeEvent
     ?? event?.data?.originalEvent
     ?? event?.originalEvent
     ?? event;
+}
+
+function getPointerButton(event) {
+  return event?.button ?? event?.data?.button ?? getNativeEvent(event)?.button ?? 0;
 }
 
 function getPointerPosition(event) {
@@ -21,19 +27,6 @@ function stopEvent(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
   event?.stopImmediatePropagation?.();
-}
-
-function suppressUpcomingContextMenu() {
-  let timeoutId;
-  const handler = event => {
-    stopEvent(event);
-    window.clearTimeout(timeoutId);
-  };
-
-  document.addEventListener("contextmenu", handler, { capture: true, once: true });
-  timeoutId = window.setTimeout(() => {
-    document.removeEventListener("contextmenu", handler, true);
-  }, CONTEXT_MENU_EVENT_TIMEOUT);
 }
 
 function clampMenuPosition(menu, point) {
@@ -56,9 +49,39 @@ async function renderMenuAt(menu, point) {
   clampMenuPosition(menu, point);
 }
 
+function getContentBounds(sprite) {
+  return sprite.transformContentBounds ?? sprite.hitArea;
+}
+
+function drawActionButton() {
+  const button = new PIXI.Container();
+  button.eventMode = "static";
+  button.interactive = true;
+  button.cursor = "pointer";
+  button.hitArea = new PIXI.Circle(0, 0, ACTION_BUTTON_SIZE / 2);
+
+  const background = new PIXI.Graphics();
+  background.beginFill(0x1f2937, 0.96);
+  background.lineStyle(2, 0xffc107, 1);
+  background.drawCircle(0, 0, ACTION_BUTTON_SIZE / 2);
+  background.endFill();
+  background.eventMode = "none";
+  button.addChild(background);
+
+  const dots = new PIXI.Graphics();
+  dots.beginFill(0xffffff, 1);
+  for (const x of [-5, 0, 5]) dots.drawCircle(x, 0, 1.7);
+  dots.endFill();
+  dots.eventMode = "none";
+  button.addChild(dots);
+
+  return button;
+}
+
 /**
- * Make the frameless sprite launcher behave as an actual positioned context
- * menu and prevent Foundry's native right-click handling from also firing.
+ * Replace the right-click launcher with an explicit on-sprite action button.
+ * Foundry reserves right-drag for canvas panning, so the launcher is opened
+ * from a left-clickable ellipsis button shown beside the transform handles.
  */
 export function installContextMenuFix(PortraitSprite, SpriteContextMenu) {
   if (PortraitSprite.prototype.contextMenuFixInstalled) return;
@@ -70,18 +93,16 @@ export function installContextMenuFix(PortraitSprite, SpriteContextMenu) {
     writable: false
   });
 
-  PortraitSprite.prototype.showHud = function(event) {
-    stopEvent(event);
-    const nativeEvent = getNativeEvent(event);
-    if (nativeEvent !== event) stopEvent(nativeEvent);
-    suppressUpcomingContextMenu();
+  const originalDraw = PortraitSprite.prototype.draw;
+  const originalUpdateTransformHandles = PortraitSprite.prototype.updateTransformHandles;
+  const originalSetSelected = PortraitSprite.prototype.setSelected;
+  const originalDestroy = PortraitSprite.prototype.destroy;
 
-    this.parent?.selectSprite?.(this);
+  PortraitSprite.prototype.openSpriteActionMenu = function(event) {
     const point = getPointerPosition(event);
 
-    if (this.transformHud instanceof SpriteContextMenu) {
-      this.transformHud.updatePointer?.(event);
-      renderMenuAt(this.transformHud, point);
+    if (this.transformHud instanceof SpriteContextMenu && this.transformHud.rendered) {
+      this.transformHud.close();
       return;
     }
 
@@ -109,5 +130,66 @@ export function installContextMenuFix(PortraitSprite, SpriteContextMenu) {
     };
 
     renderMenuAt(menu, point);
+  };
+
+  PortraitSprite.prototype.ensureSpriteActionButton = function() {
+    if (this.spriteActionButton || !this.transformHandles) return;
+
+    const button = drawActionButton();
+    button.on("pointerdown", event => {
+      if (getPointerButton(event) !== 0) return;
+      stopEvent(event);
+      const nativeEvent = getNativeEvent(event);
+      if (nativeEvent !== event) stopEvent(nativeEvent);
+      this.openSpriteActionMenu(event);
+    });
+
+    this.spriteActionButton = button;
+    this.transformHandles.addChild(button);
+    this.updateSpriteActionButton();
+  };
+
+  PortraitSprite.prototype.updateSpriteActionButton = function() {
+    const button = this.spriteActionButton;
+    const bounds = getContentBounds(this);
+    if (!button || !bounds) return;
+
+    const inverseScaleX = 1 / Math.max(0.01, Math.abs(this.spriteScaleX ?? this.scale?.x ?? 1));
+    const inverseScaleY = 1 / Math.max(0.01, Math.abs(this.spriteScaleY ?? this.scale?.y ?? 1));
+    button.position.set(
+      bounds.x + bounds.width + ACTION_BUTTON_X_OFFSET * inverseScaleX,
+      bounds.y + ACTION_BUTTON_Y_OFFSET * inverseScaleY
+    );
+    button.scale.set(inverseScaleX, inverseScaleY);
+    button.visible = Boolean(this.selected);
+  };
+
+  PortraitSprite.prototype.draw = async function(...args) {
+    await originalDraw.apply(this, args);
+    this.ensureSpriteActionButton();
+    this.updateSpriteActionButton();
+  };
+
+  PortraitSprite.prototype.updateTransformHandles = function(...args) {
+    const result = originalUpdateTransformHandles?.apply(this, args);
+    this.ensureSpriteActionButton();
+    this.updateSpriteActionButton();
+    return result;
+  };
+
+  PortraitSprite.prototype.setSelected = function(selected) {
+    const result = originalSetSelected.call(this, selected);
+    this.ensureSpriteActionButton();
+    this.updateSpriteActionButton();
+    return result;
+  };
+
+  // Right-click is intentionally left to Foundry's native canvas controls.
+  PortraitSprite.prototype.showHud = function() {};
+
+  PortraitSprite.prototype.destroy = function(options) {
+    this.transformHud?.close?.();
+    this.spriteActionButton = null;
+    return originalDestroy.call(this, options);
   };
 }
