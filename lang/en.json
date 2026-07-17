@@ -25,11 +25,11 @@
       "BodyFrame": "Body Frame (x, y, width, height)",
       "BodyFrameHint": "Define the rectangle for the full body sprite.",
       "HeadGrid": "Grid Start + Cell Size",
-      "HeadGridLayout": "Grid Layout (columns, rows, count)",
+      "HeadGridLayout": "Grid Layout (columns, rows)",
       "HeadOffset": "Head Offset (x, y)",
       "ExpressionLabel": "Expression {index}",
       "CreateSprite": "Create Sprite",
-      "PreviewHint": "Preview shows the body frame in red and expression frames in cyan.",
+      "PreviewHint": "Preview shows the original image at its natural aspect ratio, with the body box in red, the head grid box in pink, and expression frames in separate colors.",
       "PreviewPlaceholder": "Select a spritesheet to preview the grid.",
       "DefaultExpressionName": "Expression {index}",
       "Messages": {
@@ -37,6 +37,10 @@
       },
       "Errors": {
         "MissingSpritesheet": "Select a spritesheet before creating a sprite."
+      },
+      "Tabs": {
+        "Coordinates": "Coordinates",
+        "Names": "Expression Names"
       }
     },
     "DefaultExpression": "Default Expression",

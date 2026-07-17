@@ -175,3 +175,104 @@
   align-items: center;
   justify-content: center;
 }
+
+.portrait-sprite-creator .preview-layout {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.portrait-sprite-creator .preview-layout-wide {
+  flex-direction: column;
+}
+
+.portrait-sprite-creator .preview-layout-tall {
+  flex-direction: row;
+}
+
+.portrait-sprite-creator .preview-layout-tall .preview-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.portrait-sprite-creator .preview-layout-tall .coordinate-section {
+  flex: 0 0 330px;
+  border-bottom: 0;
+  padding-top: 0;
+}
+
+.portrait-sprite-creator .coordinate-section {
+  width: 100%;
+}
+
+.portrait-sprite-creator .creator-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.portrait-sprite-creator .creator-tab {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 5px;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.portrait-sprite-creator .creator-tab.active {
+  background: #2563eb;
+  color: #f8fafc;
+}
+
+.portrait-sprite-creator .creator-tab-panel {
+  display: none;
+}
+
+.portrait-sprite-creator .creator-tab-panel.active {
+  display: block;
+}
+
+.portrait-sprite-creator .creator-subsection {
+  margin-bottom: 12px;
+}
+
+.portrait-sprite-creator .creator-subsection h4 {
+  color: #f8fafc;
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+
+.portrait-sprite-creator .small-coordinate-inputs {
+  grid-template-columns: repeat(4, 4.5rem);
+  justify-content: start;
+}
+
+.portrait-sprite-creator .grid-layout-inputs {
+  grid-template-columns: repeat(2, 4.5rem);
+}
+
+.portrait-sprite-creator .expression-name-row {
+  display: grid;
+  grid-template-columns: 72px 80px minmax(140px, 1fr);
+  align-items: center;
+}
+
+.portrait-sprite-creator .expression-preview-canvas {
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #020617;
+}
+
+.portrait-sprite-creator .sprite-preview-canvas {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+}
+
+.portrait-sprite-creator .preview-layout-tall .sprite-preview-canvas {
+  max-height: 70vh;
+}

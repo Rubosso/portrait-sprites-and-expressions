@@ -2,6 +2,7 @@ export class PortraitSpriteCreator extends Application {
   constructor(options = {}) {
     super(options);
     this.formData = this.#getDefaultData();
+    this.activeTab = "coordinates";
   }
 
   static get defaultOptions() {
@@ -10,7 +11,7 @@ export class PortraitSpriteCreator extends Application {
       title: game.i18n.localize("PORTRAIT_SPRITES.Creator.Title"),
       template: "modules/portrait-sprites-and-expressions/templates/creator.html",
       classes: ["portrait-sprite-creator"],
-      width: 620,
+      width: 860,
       height: "auto",
       resizable: true
     });
@@ -22,7 +23,8 @@ export class PortraitSpriteCreator extends Application {
       ...this.formData,
       expressionCount,
       expressionNames: this.#getExpressionNames(expressionCount),
-      previewScale: this.#getPreviewScale()
+      expressionPreviews: this.#getExpressionPreviews(expressionCount),
+      previewLayoutClass: this.#getPreviewLayoutClass()
     };
   }
 
@@ -61,7 +63,26 @@ export class PortraitSpriteCreator extends Application {
       await this.#createSprite();
     });
 
+    html.find(".creator-tab").on("click", event => {
+      event.preventDefault();
+      const tab = event.currentTarget.dataset.tab;
+      this.activeTab = tab;
+      html.find(".creator-tab").toggleClass("active", false);
+      html.find(`.creator-tab[data-tab='${tab}']`).toggleClass("active", true);
+      html.find(".creator-tab-panel").toggleClass("active", false);
+      html.find(`.creator-tab-panel[data-tab-panel='${tab}']`).toggleClass("active", true);
+    });
+
+    this.#activateTab(html, this.activeTab);
     this.#renderPreview(html);
+    this.#renderExpressionPreviews(html);
+  }
+
+  #activateTab(html, tab) {
+    html.find(".creator-tab").toggleClass("active", false);
+    html.find(`.creator-tab[data-tab='${tab}']`).toggleClass("active", true);
+    html.find(".creator-tab-panel").toggleClass("active", false);
+    html.find(`.creator-tab-panel[data-tab-panel='${tab}']`).toggleClass("active", true);
   }
 
   async #createSprite() {
@@ -108,8 +129,7 @@ export class PortraitSpriteCreator extends Application {
         cellWidth: 128,
         cellHeight: 128,
         columns: 4,
-        rows: 4,
-        count: 8
+        rows: 4
       },
       headOffset: {
         x: 0,
@@ -120,8 +140,7 @@ export class PortraitSpriteCreator extends Application {
   }
 
   #getExpressionCount() {
-    const maxCount = Math.max(0, this.formData.headGrid.columns * this.formData.headGrid.rows);
-    return Math.min(Math.max(0, this.formData.headGrid.count), maxCount);
+    return Math.max(0, this.formData.headGrid.columns * this.formData.headGrid.rows);
   }
 
   #getExpressionNames(count) {
@@ -136,6 +155,20 @@ export class PortraitSpriteCreator extends Application {
       }
     }
     return this.formData.expressionNames.slice(0, count);
+  }
+
+  #getExpressionPreviews(count) {
+    const names = this.#getExpressionNames(count);
+    return names.map((name, index) => ({
+      name,
+      displayIndex: index + 1
+    }));
+  }
+
+  #getPreviewLayoutClass() {
+    const width = Math.max(1, this.formData.bodyFrame.width + this.formData.bodyFrame.x, this.formData.headGrid.startX + (this.formData.headGrid.columns * this.formData.headGrid.cellWidth));
+    const height = Math.max(1, this.formData.bodyFrame.height + this.formData.bodyFrame.y, this.formData.headGrid.startY + (this.formData.headGrid.rows * this.formData.headGrid.cellHeight));
+    return width > height * 1.25 ? "preview-layout-wide" : "preview-layout-tall";
   }
 
   #buildHeadFrames() {
@@ -157,26 +190,16 @@ export class PortraitSpriteCreator extends Application {
     return frames;
   }
 
-  #getPreviewScale() {
-    const width = this.formData.bodyFrame.width + this.formData.bodyFrame.x;
-    const height = this.formData.bodyFrame.height + this.formData.bodyFrame.y;
-    if (!width || !height) return 1;
-    const maxSize = 420;
-    const scale = Math.min(1, maxSize / Math.max(width, height));
-    return Number(scale.toFixed(2));
-  }
-
   #renderPreview(html) {
     const canvasElement = html.find(".sprite-preview-canvas")[0];
     if (!canvasElement) return;
     const context = canvasElement.getContext("2d");
     if (!context) return;
 
-    const previewScale = this.#getPreviewScale();
-    const baseWidth = Math.max(1, this.formData.bodyFrame.width + this.formData.bodyFrame.x);
-    const baseHeight = Math.max(1, this.formData.bodyFrame.height + this.formData.bodyFrame.y);
-    canvasElement.width = baseWidth * previewScale;
-    canvasElement.height = baseHeight * previewScale;
+    const fallbackWidth = Math.max(1, this.formData.bodyFrame.width + this.formData.bodyFrame.x);
+    const fallbackHeight = Math.max(1, this.formData.bodyFrame.height + this.formData.bodyFrame.y);
+    canvasElement.width = fallbackWidth;
+    canvasElement.height = fallbackHeight;
 
     context.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
@@ -191,24 +214,58 @@ export class PortraitSpriteCreator extends Application {
 
     const image = new Image();
     image.onload = () => {
-      context.drawImage(
-        image,
-        0,
-        0,
-        canvasElement.width,
-        canvasElement.height
-      );
-      this.#drawOverlays(context, previewScale);
+      canvasElement.width = image.naturalWidth || image.width;
+      canvasElement.height = image.naturalHeight || image.height;
+      context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      context.drawImage(image, 0, 0);
+      this.#drawOverlays(context);
     };
     image.src = this.formData.spritesheet;
   }
 
-  #drawOverlays(context, scale) {
-    context.save();
-    context.scale(scale, scale);
+  #renderExpressionPreviews(html) {
+    if (!this.formData.spritesheet) return;
 
-    context.strokeStyle = "rgba(248, 113, 113, 0.9)";
-    context.lineWidth = 2 / scale;
+    const image = new Image();
+    image.onload = () => {
+      html.find(".expression-preview-canvas").each((_, canvasElement) => {
+        const index = Number(canvasElement.dataset.expressionIndex);
+        const context = canvasElement.getContext("2d");
+        if (!context || Number.isNaN(index)) return;
+
+        const column = index % this.formData.headGrid.columns;
+        const row = Math.floor(index / this.formData.headGrid.columns);
+        const sourceX = this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth;
+        const sourceY = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
+
+        context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        context.fillStyle = "#020617";
+        context.fillRect(0, 0, canvasElement.width, canvasElement.height);
+        context.drawImage(
+          image,
+          sourceX,
+          sourceY,
+          this.formData.headGrid.cellWidth,
+          this.formData.headGrid.cellHeight,
+          0,
+          0,
+          canvasElement.width,
+          canvasElement.height
+        );
+        context.strokeStyle = this.#getExpressionColor(index);
+        context.lineWidth = 4;
+        context.strokeRect(2, 2, canvasElement.width - 4, canvasElement.height - 4);
+      });
+    };
+    image.src = this.formData.spritesheet;
+  }
+
+
+  #drawOverlays(context) {
+    context.save();
+
+    context.strokeStyle = "rgba(248, 113, 113, 0.95)";
+    context.lineWidth = 3;
     context.strokeRect(
       this.formData.bodyFrame.x,
       this.formData.bodyFrame.y,
@@ -216,17 +273,31 @@ export class PortraitSpriteCreator extends Application {
       this.formData.bodyFrame.height
     );
 
-    context.strokeStyle = "rgba(34, 211, 238, 0.9)";
-    context.lineWidth = 1.5 / scale;
+    context.strokeStyle = "rgba(244, 114, 182, 0.95)";
+    context.lineWidth = 3;
+    context.strokeRect(
+      this.formData.headGrid.startX,
+      this.formData.headGrid.startY,
+      this.formData.headGrid.columns * this.formData.headGrid.cellWidth,
+      this.formData.headGrid.rows * this.formData.headGrid.cellHeight
+    );
+
+    context.lineWidth = 2;
     const count = this.#getExpressionCount();
     for (let i = 0; i < count; i += 1) {
       const column = i % this.formData.headGrid.columns;
       const row = Math.floor(i / this.formData.headGrid.columns);
       const x = this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth;
       const y = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
+      context.strokeStyle = this.#getExpressionColor(i);
       context.strokeRect(x, y, this.formData.headGrid.cellWidth, this.formData.headGrid.cellHeight);
     }
 
     context.restore();
+  }
+
+  #getExpressionColor(index) {
+    const hue = (index * 47) % 360;
+    return `hsla(${hue}, 90%, 62%, 0.95)`;
   }
 }
