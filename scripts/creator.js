@@ -1,6 +1,7 @@
 import { TEMPLATES } from "./constants.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const FilePicker = foundry.applications.apps.FilePicker?.implementation ?? globalThis.FilePicker;
 
 export class PortraitSpriteCreator extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
