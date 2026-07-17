@@ -117,7 +117,7 @@
 .portrait-sprite-creator .sprite-creator-form {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  height: min(78vh, 760px);
+  height: min(72vh, 700px);
   min-height: 500px;
   overflow: hidden;
 }
@@ -154,7 +154,7 @@
 
 .portrait-sprite-creator .expression-name-grid {
   align-content: start;
-  max-height: calc(min(78vh, 760px) - 145px);
+  max-height: calc(min(72vh, 700px) - 145px);
   overflow: auto;
   padding: 2px 8px 12px 2px;
 }
