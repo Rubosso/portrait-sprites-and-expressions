@@ -19,8 +19,19 @@
       "ResetSize": "Reset Transform",
       "ResetSizeHint": "Restore the sprite to 0 degrees and its original 100% width and height"
     },
+    "ContextMenu": {
+      "Title": "Sprite Actions",
+      "Edit": "Edit",
+      "Expressions": "Expressions",
+      "Reset": "Reset"
+    },
+    "ExpressionPicker": {
+      "Title": "Choose Expression",
+      "Hint": "Select an expression by its final composite preview. No Expression shows the body sprite without a head layer."
+    },
     "Creator": {
       "Title": "Portrait Sprite Creator",
+      "EditTitle": "Edit Portrait Sprite",
       "Tool": "Create Portrait Sprite",
       "Sections": {
         "Source": "Source",
@@ -37,11 +48,13 @@
       "HeadOffset": "Head Offset (x, y)",
       "ExpressionLabel": "Expression {index}",
       "CreateSprite": "Create Sprite",
+      "SaveSprite": "Save Sprite",
       "PreviewHint": "Preview shows the original image at its natural aspect ratio, with the body box in red, the head grid box in pink, and expression frames in cyan.",
       "PreviewPlaceholder": "Select a spritesheet to preview the grid.",
       "DefaultExpressionName": "Expression {index}",
       "Messages": {
-        "Created": "Portrait sprite created."
+        "Created": "Portrait sprite created.",
+        "Updated": "Portrait sprite updated."
       },
       "Errors": {
         "MissingSpritesheet": "Select a spritesheet before creating a sprite."
