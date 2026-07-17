@@ -117,6 +117,7 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     }
 
     const headFrames = this.#buildHeadFrames();
+    const centre = this.#getCanvasViewCentre();
     const spriteData = await PortraitSprites.addSprite({
       spritesheet: this.formData.spritesheet,
       bodyFrame: {
@@ -130,13 +131,22 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
         x: this.formData.headOffset.x,
         y: this.formData.headOffset.y
       },
-      x: canvas.stage.worldTransform.tx ? canvas.stage.worldTransform.tx * -1 : 0,
-      y: canvas.stage.worldTransform.ty ? canvas.stage.worldTransform.ty * -1 : 0
+      x: centre.x,
+      y: centre.y
     });
 
     if (spriteData) {
       ui.notifications.info(game.i18n.localize("PORTRAIT_SPRITES.Creator.Messages.Created"));
     }
+  }
+
+  #getCanvasViewCentre() {
+    const screen = canvas.app?.renderer?.screen;
+    const centre = new PIXI.Point(
+      screen ? screen.width / 2 : window.innerWidth / 2,
+      screen ? screen.height / 2 : window.innerHeight / 2
+    );
+    return canvas.stage.toLocal(centre);
   }
 
   #getDefaultData() {
