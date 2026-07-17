@@ -14,6 +14,13 @@ export class PortraitSpritesLayer extends InteractionLayerBase {
     this.interactionActive = false;
     this.eventMode = "static";
     this.interactive = true;
+    this.hitArea = new PIXI.Rectangle(-100000, -100000, 200000, 200000);
+
+    this.on("pointerdown", this.#onLayerPointerDown, this);
+    this.on("rightdown", this.#onLayerRightDown, this);
+    this.on("pointermove", this.#onLayerPointerMove, this);
+    this.on("pointerup", this.#onLayerPointerUp, this);
+    this.on("pointerupoutside", this.#onLayerPointerUp, this);
   }
 
   /**
@@ -144,9 +151,68 @@ export class PortraitSpritesLayer extends InteractionLayerBase {
   }
 
   #setSpritesInteractive(active) {
+    this.eventMode = active ? "static" : "none";
+    this.interactive = active;
     for (const sprite of this.sprites.values()) {
       sprite.setInteractive(active);
     }
+  }
+
+  #onLayerPointerDown(event) {
+    if (!this.interactionActive || this.#getPointerButton(event) !== 0) return;
+    const sprite = this.#pickSprite(this.#getLayerPointerPosition(event));
+    if (!sprite) return;
+    event.stopPropagation?.();
+    sprite.startDrag(event);
+  }
+
+  #onLayerRightDown(event) {
+    if (!this.interactionActive) return;
+    const sprite = this.#pickSprite(this.#getLayerPointerPosition(event));
+    if (!sprite) return;
+    event.stopPropagation?.();
+    sprite.showHud(event);
+  }
+
+  #onLayerPointerMove(event) {
+    if (!this.interactionActive) return;
+    const draggingSprite = this.#getDraggingSprite();
+    if (draggingSprite) {
+      draggingSprite.dragMove(event);
+      return;
+    }
+
+    const sprite = this.#pickSprite(this.#getLayerPointerPosition(event));
+    this.cursor = sprite ? "pointer" : null;
+  }
+
+  async #onLayerPointerUp(event) {
+    if (!this.interactionActive) return;
+    const draggingSprite = this.#getDraggingSprite();
+    if (!draggingSprite) return;
+    await draggingSprite.dragEnd(event);
+  }
+
+  #pickSprite(position) {
+    const sprites = Array.from(this.sprites.values());
+    for (let index = sprites.length - 1; index >= 0; index -= 1) {
+      const sprite = sprites[index];
+      if (sprite.containsLayerPoint(position)) return sprite;
+    }
+    return null;
+  }
+
+  #getDraggingSprite() {
+    return Array.from(this.sprites.values()).find(sprite => sprite.isDragging);
+  }
+
+  #getPointerButton(event) {
+    return event?.button ?? event?.data?.button ?? 0;
+  }
+
+  #getLayerPointerPosition(event) {
+    if (typeof event?.getLocalPosition === "function") return event.getLocalPosition(this);
+    return event.data.getLocalPosition(this);
   }
 }
 
@@ -375,16 +441,34 @@ class PortraitSprite extends PIXI.Container {
    */
   _onRightClick(event) {
     event.stopPropagation?.();
-    this.setSelected(true);
-    
-    // Show expression HUD
-    const hud = new PortraitSpriteHUD(this);
-    hud.render(true);
+    this.showHud(event);
   }
 
   _onDragStart(event) {
     if (this.#getPointerButton(event) !== 0) return;
     event.stopPropagation?.();
+    this.startDrag(event);
+  }
+
+  _onDragMove(event) {
+    if (!this.isDragging) return;
+    event.stopPropagation?.();
+    this.dragMove(event);
+  }
+
+  async _onDragEnd(event) {
+    if (!this.isDragging) return;
+    event?.stopPropagation?.();
+    await this.dragEnd(event);
+  }
+
+  showHud() {
+    this.setSelected(true);
+    const hud = new PortraitSpriteHUD(this);
+    hud.render(true);
+  }
+
+  startDrag(event) {
     this.setSelected(true);
     this.isDragging = true;
     const position = this.#getLocalPointerPosition(event);
@@ -392,22 +476,26 @@ class PortraitSprite extends PIXI.Container {
     this.dragOffset.y = position.y - this.position.y;
   }
 
-  _onDragMove(event) {
+  dragMove(event) {
     if (!this.isDragging) return;
-    event.stopPropagation?.();
     const position = this.#getLocalPointerPosition(event);
     this.position.set(position.x - this.dragOffset.x, position.y - this.dragOffset.y);
   }
 
-  async _onDragEnd(event) {
+  async dragEnd(_event) {
     if (!this.isDragging) return;
-    event?.stopPropagation?.();
     this.isDragging = false;
     await this._savePosition();
   }
 
   #getPointerButton(event) {
     return event?.button ?? event?.data?.button ?? 0;
+  }
+
+  containsLayerPoint(position) {
+    if (!this.hitArea) return false;
+    const local = new PIXI.Point(position.x - this.position.x, position.y - this.position.y);
+    return this.hitArea.contains(local.x, local.y);
   }
 
   #getLocalPointerPosition(event) {
