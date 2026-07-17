@@ -456,10 +456,11 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     context.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
     if (!this.formData.spritesheet) {
-      context.fillStyle = "#1f1f1f";
+      const styles = getComputedStyle(canvasElement);
+      context.fillStyle = styles.backgroundColor;
       context.fillRect(0, 0, canvasElement.width, canvasElement.height);
-      context.fillStyle = "#9ca3af";
-      context.font = "14px sans-serif";
+      context.fillStyle = styles.color;
+      context.font = styles.font || "14px sans-serif";
       context.fillText(game.i18n.localize("PORTRAIT_SPRITES.Creator.PreviewPlaceholder"), 12, 24);
       return;
     }
@@ -497,8 +498,6 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
         const sourceY = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
 
         context.clearRect(0, 0, canvasElement.width, canvasElement.height);
-        context.fillStyle = "#020617";
-        context.fillRect(0, 0, canvasElement.width, canvasElement.height);
         context.drawImage(
           image,
           sourceX,
@@ -568,7 +567,8 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
 
     context.clearRect(0, 0, magnifierCanvas.width, magnifierCanvas.height);
     context.imageSmoothingEnabled = false;
-    context.fillStyle = "#111827";
+    const styles = getComputedStyle(magnifierCanvas);
+    context.fillStyle = styles.backgroundColor;
     context.fillRect(0, 0, magnifierCanvas.width, magnifierCanvas.height);
 
     if (!sourceCanvas.width || !sourceCanvas.height) return;
@@ -595,13 +595,13 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       magnifierCanvas.height
     );
 
-    context.strokeStyle = "#facc15";
+    context.strokeStyle = styles.color;
     context.lineWidth = 2;
     context.strokeRect(1, 1, magnifierCanvas.width - 2, magnifierCanvas.height - 2);
-    context.fillStyle = "rgba(17, 24, 39, 0.8)";
+    context.fillStyle = styles.backgroundColor;
     context.fillRect(8, 8, 54, 22);
-    context.fillStyle = "#facc15";
-    context.font = "12px sans-serif";
+    context.fillStyle = styles.color;
+    context.font = styles.font || "12px sans-serif";
     context.fillText(`${zoom}x`, 18, 23);
   }
 
@@ -614,7 +614,8 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     context.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
     if (!this.previewImage) {
-      context.fillStyle = "#111827";
+      const styles = getComputedStyle(canvasElement);
+      context.fillStyle = styles.backgroundColor;
       context.fillRect(0, 0, canvasElement.width, canvasElement.height);
       return;
     }
