@@ -34,6 +34,25 @@ installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPic
 installExpressionPickerAlignment(PortraitExpressionPicker);
 installPortraitLayerIsolation(PortraitSpritesLayer);
 
+function setPortraitControlActive(active) {
+  const layer = canvas.portraitSprites;
+  if (!layer) return;
+
+  if (active) {
+    // SceneControl in Foundry v13 does not own a layer automatically. Use the
+    // InteractionLayer lifecycle so the portrait layer becomes the active layer,
+    // other interaction layers are deactivated, and sprite children are enabled.
+    layer.activate?.({ tool: "select" });
+    return;
+  }
+
+  // Deactivate the actual InteractionLayer rather than only muting pointer flags.
+  // This clears Foundry's active-layer state so the next control can activate its
+  // own layer and restore normal token, tile, wall, and drawing interactions.
+  if (layer.active) layer.deactivate?.();
+  else layer.setInteractionActive?.(false);
+}
+
 Hooks.once("init", () => {
   log("Initializing");
 
@@ -61,18 +80,13 @@ Hooks.on("canvasReady", canvasInstance => {
   const layer = canvasInstance.portraitSprites;
   if (!layer) return;
 
-  // InteractionLayer activation is owned by Foundry's scene controls. Keep the
-  // portrait layer passive unless Foundry reports that it is the active layer.
   layer.setInteractionActive?.(Boolean(layer.active));
   log("Layer initialized with", layer.sprites.size, "sprites");
 });
 
 Hooks.on("getSceneControlButtons", controls => {
-  // The layer property is important: Foundry uses it to activate this layer and
-  // to restore Tokens, Tiles, Drawings, and other layers when controls change.
   controls.portraitSprites = {
     name: "portraitSprites",
-    layer: "portraitSprites",
     title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
     icon: "fas fa-user-circle",
     order: Object.keys(controls).length,
@@ -82,7 +96,10 @@ Hooks.on("getSceneControlButtons", controls => {
         name: "select",
         title: game.i18n.localize("CONTROLS.CommonSelect"),
         icon: "fas fa-mouse-pointer",
-        order: 0
+        order: 0,
+        onChange: (_event, active) => {
+          if (active) setPortraitControlActive(true);
+        }
       },
       portraitSpriteCreator: {
         name: "portraitSpriteCreator",
@@ -95,7 +112,8 @@ Hooks.on("getSceneControlButtons", controls => {
           new PortraitSpriteCreator().render(true);
         }
       }
-    }
+    },
+    onChange: (_event, active) => setPortraitControlActive(active)
   };
 });
 
