@@ -4,8 +4,8 @@ const VIEWPORT_MARGIN = 64;
 const PICKER_MIN_HEIGHT = 360;
 const PICKER_DEFAULT_HEIGHT = 620;
 const PICKER_MIN_CARD_WIDTH = 112;
-const WRAPPED_CONTROLS = new WeakSet();
-const WRAPPED_TOOLS = new WeakSet();
+const FACE_CROP_X_INSET = 0.05;
+const FACE_CROP_HEIGHT = 0.78;
 
 function getContentElement(root) {
   return root?.querySelector?.('[data-application-part="content"]')
@@ -118,23 +118,30 @@ function drawHeadPreview(canvasElement, image, frame) {
   context.clearRect(0, 0, canvasElement.width, canvasElement.height);
   if (!image || !frame) return;
 
-  const padding = 8;
+  // The expression cells include a lot of shoulder and torso space. Crop the
+  // lower portion and a small amount from each side so the picker reads as a
+  // face selector instead of another full portrait preview.
+  const sourceX = frame.x + frame.width * FACE_CROP_X_INSET;
+  const sourceY = frame.y;
+  const sourceWidth = frame.width * (1 - FACE_CROP_X_INSET * 2);
+  const sourceHeight = frame.height * FACE_CROP_HEIGHT;
+  const padding = 6;
   const scale = Math.min(
-    (canvasElement.width - padding * 2) / Math.max(1, frame.width),
-    (canvasElement.height - padding * 2) / Math.max(1, frame.height)
+    (canvasElement.width - padding * 2) / Math.max(1, sourceWidth),
+    (canvasElement.height - padding * 2) / Math.max(1, sourceHeight)
   );
-  const width = frame.width * scale;
-  const height = frame.height * scale;
+  const width = sourceWidth * scale;
+  const height = sourceHeight * scale;
   const x = (canvasElement.width - width) / 2;
   const y = (canvasElement.height - height) / 2;
 
   context.imageSmoothingEnabled = false;
   context.drawImage(
     image,
-    frame.x,
-    frame.y,
-    frame.width,
-    frame.height,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
     x,
     y,
     width,
@@ -213,31 +220,10 @@ export function installExpressionPickerAlignment(PortraitExpressionPicker) {
   };
 }
 
-function disablePortraitLayer() {
-  globalThis.canvas?.portraitSprites?.setInteractionActive?.(false);
-}
-
-function wrapControlActivation(control) {
-  if (!control || typeof control !== "object" || WRAPPED_CONTROLS.has(control)) return;
-  WRAPPED_CONTROLS.add(control);
-
-  const originalOnChange = control.onChange;
-  control.onChange = function(event, active, ...args) {
-    if (active !== false) disablePortraitLayer();
-    return originalOnChange?.call(this, event, active, ...args);
-  };
-
-  for (const tool of Object.values(control.tools ?? {})) {
-    if (!tool || typeof tool !== "object" || WRAPPED_TOOLS.has(tool)) continue;
-    WRAPPED_TOOLS.add(tool);
-    const originalToolOnChange = tool.onChange;
-    tool.onChange = function(event, active, ...args) {
-      if (active !== false) disablePortraitLayer();
-      return originalToolOnChange?.call(this, event, active, ...args);
-    };
-  }
-}
-
+/**
+ * Keep the portrait layer fully passive whenever Foundry deactivates it. Layer
+ * switching itself is handled by the SceneControl `layer` property in init.js.
+ */
 export function installPortraitLayerIsolation(PortraitSpritesLayer) {
   if (PortraitSpritesLayer.prototype.portraitLayerIsolationInstalled) return;
 
@@ -264,14 +250,7 @@ export function installPortraitLayerIsolation(PortraitSpritesLayer) {
 
   PortraitSpritesLayer.prototype._draw = async function(...args) {
     const result = await originalDraw.apply(this, args);
-    this.setInteractionActive(Boolean(this.interactionActive));
+    this.setInteractionActive(Boolean(this.active));
     return result;
   };
-
-  Hooks.on("getSceneControlButtons", controls => {
-    for (const [name, control] of Object.entries(controls ?? {})) {
-      if (name === "portraitSprites") continue;
-      wrapControlActivation(control);
-    }
-  });
 }
