@@ -45,7 +45,8 @@
       },
       "ImageDimensions": "Original image: {width} \u00d7 {height}px",
       "ImageDimensionsUnknown": "Original image dimensions unavailable until a spritesheet is loaded.",
-      "FinalPreviewHint": "Cycles through expressions once per second using the current body, head grid, and head offset settings."
+      "FinalPreviewHint": "Cycles through expressions once per second using the current body, head grid, and head offset settings.",
+      "MagnifierHint": "Move over the final preview to inspect pixels; use the mouse wheel to adjust zoom."
     },
     "DefaultExpression": "Default Expression",
     "Tools": {

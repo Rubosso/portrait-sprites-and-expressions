@@ -7,6 +7,8 @@ export class PortraitSpriteCreator extends Application {
     this.dragState = null;
     this.finalPreviewIndex = 0;
     this.finalPreviewInterval = null;
+    this.finalPreviewPoint = null;
+    this.finalPreviewZoom = 4;
   }
 
   static get defaultOptions() {
@@ -507,13 +509,87 @@ export class PortraitSpriteCreator extends Application {
       this.finalPreviewInterval = null;
     }
 
-    const draw = () => this.#drawFinalPreview(canvasElement);
+    const magnifierCanvas = html.find(".final-magnifier-canvas")[0];
+    this.#activateFinalPreviewMagnifier(canvasElement, magnifierCanvas);
+
+    const draw = () => {
+      this.#drawFinalPreview(canvasElement);
+      this.#drawFinalMagnifier(canvasElement, magnifierCanvas);
+    };
     draw();
     this.finalPreviewInterval = setInterval(() => {
       this.finalPreviewIndex = (this.finalPreviewIndex + 1) % Math.max(1, this.#getExpressionCount());
       draw();
     }, 1000);
   }
+
+
+  #activateFinalPreviewMagnifier(canvasElement, magnifierCanvas) {
+    if (!canvasElement || !magnifierCanvas) return;
+
+    canvasElement.addEventListener("mousemove", event => {
+      this.finalPreviewPoint = this.#getCanvasPoint(canvasElement, event);
+      this.#drawFinalMagnifier(canvasElement, magnifierCanvas);
+    });
+
+    canvasElement.addEventListener("mouseleave", () => {
+      this.finalPreviewPoint = null;
+      this.#drawFinalMagnifier(canvasElement, magnifierCanvas);
+    });
+
+    canvasElement.addEventListener("wheel", event => {
+      event.preventDefault();
+      const direction = event.deltaY < 0 ? 1 : -1;
+      this.finalPreviewZoom = Math.min(12, Math.max(2, this.finalPreviewZoom + direction));
+      this.finalPreviewPoint = this.#getCanvasPoint(canvasElement, event);
+      this.#drawFinalMagnifier(canvasElement, magnifierCanvas);
+    }, { passive: false });
+  }
+
+  #drawFinalMagnifier(sourceCanvas, magnifierCanvas) {
+    if (!magnifierCanvas) return;
+    const context = magnifierCanvas.getContext("2d");
+    if (!context) return;
+
+    context.clearRect(0, 0, magnifierCanvas.width, magnifierCanvas.height);
+    context.imageSmoothingEnabled = false;
+    context.fillStyle = "#111827";
+    context.fillRect(0, 0, magnifierCanvas.width, magnifierCanvas.height);
+
+    if (!sourceCanvas.width || !sourceCanvas.height) return;
+
+    const point = this.finalPreviewPoint || {
+      x: sourceCanvas.width / 2,
+      y: sourceCanvas.height / 2
+    };
+    const zoom = this.finalPreviewZoom;
+    const sourceWidth = Math.min(sourceCanvas.width, magnifierCanvas.width / zoom);
+    const sourceHeight = Math.min(sourceCanvas.height, magnifierCanvas.height / zoom);
+    const sourceX = Math.max(0, Math.min(sourceCanvas.width - sourceWidth, point.x - sourceWidth / 2));
+    const sourceY = Math.max(0, Math.min(sourceCanvas.height - sourceHeight, point.y - sourceHeight / 2));
+
+    context.drawImage(
+      sourceCanvas,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      magnifierCanvas.width,
+      magnifierCanvas.height
+    );
+
+    context.strokeStyle = "#facc15";
+    context.lineWidth = 2;
+    context.strokeRect(1, 1, magnifierCanvas.width - 2, magnifierCanvas.height - 2);
+    context.fillStyle = "rgba(17, 24, 39, 0.8)";
+    context.fillRect(8, 8, 54, 22);
+    context.fillStyle = "#facc15";
+    context.font = "12px sans-serif";
+    context.fillText(`${zoom}x`, 18, 23);
+  }
+
 
   #drawFinalPreview(canvasElement) {
     const context = canvasElement.getContext("2d");

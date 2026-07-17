@@ -409,3 +409,26 @@
   max-height: 45vh;
   max-width: 360px;
 }
+
+.portrait-sprite-creator .final-preview-layout {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+}
+
+.portrait-sprite-creator .final-magnifier-panel {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 220px;
+}
+
+.portrait-sprite-creator .final-magnifier-canvas {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  height: 220px;
+  image-rendering: pixelated;
+  width: 220px;
+}

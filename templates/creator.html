@@ -100,7 +100,13 @@
   <div class="creator-tab-panel" data-tab-panel="final">
     <section class="creator-section final-preview-section">
       <h3>{{localize "PORTRAIT_SPRITES.Creator.Tabs.Final"}}</h3>
-      <canvas class="final-sprite-preview-canvas"></canvas>
+      <div class="final-preview-layout">
+        <canvas class="final-sprite-preview-canvas"></canvas>
+        <div class="final-magnifier-panel">
+          <canvas class="final-magnifier-canvas" width="220" height="220"></canvas>
+          <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.MagnifierHint"}}</p>
+        </div>
+      </div>
       <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.FinalPreviewHint"}}</p>
     </section>
   </div>
