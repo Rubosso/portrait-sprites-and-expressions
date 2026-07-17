@@ -34,18 +34,9 @@ installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPic
 installExpressionPickerAlignment(PortraitExpressionPicker);
 installPortraitLayerIsolation(PortraitSpritesLayer);
 
-function activatePortraitLayer() {
-  const layer = canvas.portraitSprites;
-  if (!layer) return;
-
-  layer.activate?.({ tool: "select" });
-  layer.setInteractionActive?.(true);
-}
-
 Hooks.once("init", () => {
   log("Initializing");
-  
-  // Register settings if needed in the future
+
   game.settings.register(MODULE_ID, "version", {
     name: "Module Version",
     scope: "world",
@@ -57,29 +48,31 @@ Hooks.once("init", () => {
 
 Hooks.once("setup", () => {
   log("Setup");
-  
-  // Interactive canvas layers belong in the interface group in Foundry v13.
+
   CONFIG.Canvas.layers.portraitSprites = {
     layerClass: PortraitSpritesLayer,
     group: "interface"
   };
 });
 
-Hooks.on("canvasReady", (canvas) => {
+Hooks.on("canvasReady", canvasInstance => {
   log("Canvas Ready");
-  
-  const layer = canvas.portraitSprites;
-  if (layer) {
-    // Keep the portrait layer passive unless it is the canvas' active layer.
-    layer.setInteractionActive?.(canvas.activeLayer === layer);
-    log("Layer initialized with", layer.sprites.size, "sprites");
-  }
+
+  const layer = canvasInstance.portraitSprites;
+  if (!layer) return;
+
+  // InteractionLayer activation is owned by Foundry's scene controls. Keep the
+  // portrait layer passive unless Foundry reports that it is the active layer.
+  layer.setInteractionActive?.(Boolean(layer.active));
+  log("Layer initialized with", layer.sprites.size, "sprites");
 });
 
-Hooks.on("getSceneControlButtons", (controls) => {
-  // Foundry VTT v13 provides scene controls as a keyed record instead of an array.
+Hooks.on("getSceneControlButtons", controls => {
+  // The layer property is important: Foundry uses it to activate this layer and
+  // to restore Tokens, Tiles, Drawings, and other layers when controls change.
   controls.portraitSprites = {
     name: "portraitSprites",
+    layer: "portraitSprites",
     title: game.i18n.localize("PORTRAIT_SPRITES.Layer"),
     icon: "fas fa-user-circle",
     order: Object.keys(controls).length,
@@ -89,10 +82,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
         name: "select",
         title: game.i18n.localize("CONTROLS.CommonSelect"),
         icon: "fas fa-mouse-pointer",
-        order: 0,
-        onChange: (_event, active) => {
-          if (active) activatePortraitLayer();
-        }
+        order: 0
       },
       portraitSpriteCreator: {
         name: "portraitSpriteCreator",
@@ -102,24 +92,13 @@ Hooks.on("getSceneControlButtons", (controls) => {
         button: true,
         onChange: (_event, active) => {
           if (active === false) return;
-
-          const creator = new PortraitSpriteCreator();
-          creator.render(true);
+          new PortraitSpriteCreator().render(true);
         }
       }
-    },
-    onChange: (_event, active) => {
-      if (active === false) {
-        canvas.portraitSprites?.setInteractionActive?.(false);
-        return;
-      }
-
-      activatePortraitLayer();
     }
   };
 });
 
-// API for managing portrait sprites
 window.PortraitSprites = createPortraitSpritesApi();
 
 log("Module loaded");
