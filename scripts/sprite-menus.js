@@ -248,7 +248,7 @@ class PortraitExpressionPicker extends HandlebarsApplicationMixin(ApplicationV2)
   _onRender(context, options) {
     super._onRender(context, options);
 
-    this.element.querySelectorAll("[data-expression-index]").forEach(button => {
+    this.element.querySelectorAll(".expression-choice[data-expression-index]").forEach(button => {
       button.addEventListener("click", async event => {
         event.preventDefault();
         const index = Number(event.currentTarget.dataset.expressionIndex);
