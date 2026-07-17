@@ -10,7 +10,14 @@
       "ExpressionName": "Expression Name",
       "ExpressionNumber": "Expression {index}",
       "SingleExpression": "Single expression available",
-      "NoExpression": "No Expression"
+      "NoExpression": "No Expression",
+      "Rotation": "Rotation (degrees)",
+      "RotateLeft": "Rotate left 15 degrees",
+      "RotateRight": "Rotate right 15 degrees",
+      "ScaleX": "Horizontal scale (%)",
+      "ScaleY": "Vertical scale (%)",
+      "ResetSize": "Reset Size",
+      "ResetSizeHint": "Restore the sprite to its original 100% width and height"
     },
     "Creator": {
       "Title": "Portrait Sprite Creator",
