@@ -8,6 +8,17 @@ import { log } from "./constants.js";
 import { PortraitSpritesLayer } from "./layer.js";
 import { PortraitSpriteCreator } from "./creator.js";
 
+function activatePortraitLayer() {
+  const layer = canvas.portraitSprites;
+  if (!layer) return;
+
+  // Foundry v13 InteractionLayer defaults this to false, which prevents
+  // pointer events from reaching interactive sprite children.
+  layer.interactiveChildren = true;
+  layer.activate?.({ tool: "select" });
+  layer.setInteractionActive?.(true);
+}
+
 Hooks.once("init", () => {
   log("Initializing");
   
@@ -24,19 +35,18 @@ Hooks.once("init", () => {
 Hooks.once("setup", () => {
   log("Setup");
   
-  // Keep the layer in the primary canvas group so its coordinates use the
-  // same panning and zoom transform as canvas.stage.
+  // Interactive canvas layers belong in the interface group in Foundry v13.
   CONFIG.Canvas.layers.portraitSprites = {
     layerClass: PortraitSpritesLayer,
-    group: "primary"
+    group: "interface"
   };
 });
 
 Hooks.on("canvasReady", (canvas) => {
   log("Canvas Ready");
   
-  // The layer will automatically draw when canvas is ready
   if (canvas.portraitSprites) {
+    canvas.portraitSprites.interactiveChildren = true;
     log("Layer initialized with", canvas.portraitSprites.sprites.size, "sprites");
   }
 });
@@ -56,9 +66,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
         icon: "fas fa-mouse-pointer",
         order: 0,
         onChange: (_event, active) => {
-          if (!active) return;
-          canvas.portraitSprites?.activate?.({ tool: "select" });
-          canvas.portraitSprites?.setInteractionActive?.(true);
+          if (active) activatePortraitLayer();
         }
       },
       portraitSpriteCreator: {
@@ -81,8 +89,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
         return;
       }
 
-      canvas.portraitSprites?.activate?.({ tool: "select" });
-      canvas.portraitSprites?.setInteractionActive?.(true);
+      activatePortraitLayer();
     }
   };
 });
