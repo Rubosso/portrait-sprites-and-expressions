@@ -38,11 +38,8 @@ function getInverseScale(sprite) {
 }
 
 function createText(text, style) {
-  try {
-    return new PIXI.Text({ text, style });
-  } catch (_error) {
-    return new PIXI.Text(text, style);
-  }
+  const resolvedStyle = PIXI.TextStyle ? new PIXI.TextStyle(style) : style;
+  return new PIXI.Text(String(text), resolvedStyle);
 }
 
 function drawActionButton() {
