@@ -1,80 +1,115 @@
 <form class="sprite-creator-form">
-  <section class="creator-section">
-    <h3>{{localize "PORTRAIT_SPRITES.Creator.Sections.Source"}}</h3>
-    <div class="form-row">
-      <label for="portrait-spritesheet">{{localize "PORTRAIT_SPRITES.Creator.Spritesheet"}}</label>
-      <div class="input-with-button">
-        <input id="portrait-spritesheet" name="spritesheet" type="text" value="{{spritesheet}}" />
-        <button type="button" class="file-picker" data-action="pick-spritesheet">
-          <i class="fas fa-folder-open"></i>
-        </button>
-      </div>
-    </div>
-  </section>
+  <div class="creator-tabs creator-tabs-top" role="tablist">
+    <button type="button" class="creator-tab active" data-tab="coordinates">
+      {{localize "PORTRAIT_SPRITES.Creator.Tabs.Coordinates"}}
+    </button>
+    <button type="button" class="creator-tab" data-tab="names">
+      {{localize "PORTRAIT_SPRITES.Creator.Tabs.Names"}}
+    </button>
+    <button type="button" class="creator-tab" data-tab="final">
+      {{localize "PORTRAIT_SPRITES.Creator.Tabs.Final"}}
+    </button>
+  </div>
 
-  <section class="creator-section">
-    <h3>{{localize "PORTRAIT_SPRITES.Creator.Sections.Body"}}</h3>
-    <div class="grid-row">
-      <label>{{localize "PORTRAIT_SPRITES.Creator.BodyFrame"}}</label>
-      <div class="grid-inputs">
-        <input name="bodyFrame.x" type="number" value="{{bodyFrame.x}}" min="0" />
-        <input name="bodyFrame.y" type="number" value="{{bodyFrame.y}}" min="0" />
-        <input name="bodyFrame.width" type="number" value="{{bodyFrame.width}}" min="1" />
-        <input name="bodyFrame.height" type="number" value="{{bodyFrame.height}}" min="1" />
-      </div>
-    </div>
-    <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.BodyFrameHint"}}</p>
-  </section>
-
-  <section class="creator-section">
-    <h3>{{localize "PORTRAIT_SPRITES.Creator.Sections.Expressions"}}</h3>
-    <div class="grid-row">
-      <label>{{localize "PORTRAIT_SPRITES.Creator.HeadGrid"}}</label>
-      <div class="grid-inputs">
-        <input name="headGrid.startX" type="number" value="{{headGrid.startX}}" min="0" />
-        <input name="headGrid.startY" type="number" value="{{headGrid.startY}}" min="0" />
-        <input name="headGrid.cellWidth" type="number" value="{{headGrid.cellWidth}}" min="1" />
-        <input name="headGrid.cellHeight" type="number" value="{{headGrid.cellHeight}}" min="1" />
-      </div>
-    </div>
-    <div class="grid-row">
-      <label>{{localize "PORTRAIT_SPRITES.Creator.HeadGridLayout"}}</label>
-      <div class="grid-inputs">
-        <input name="headGrid.columns" type="number" value="{{headGrid.columns}}" min="1" />
-        <input name="headGrid.rows" type="number" value="{{headGrid.rows}}" min="1" />
-        <input name="headGrid.count" type="number" value="{{headGrid.count}}" min="1" />
-      </div>
-    </div>
-    <div class="grid-row">
-      <label>{{localize "PORTRAIT_SPRITES.Creator.HeadOffset"}}</label>
-      <div class="grid-inputs">
-        <input name="headOffset.x" type="number" value="{{headOffset.x}}" />
-        <input name="headOffset.y" type="number" value="{{headOffset.y}}" />
-      </div>
-    </div>
-  </section>
-
-  <section class="creator-section">
-    <h3>{{localize "PORTRAIT_SPRITES.Creator.Sections.Names"}}</h3>
-    <div class="expression-names">
-      {{#each expressionNames}}
-        <div class="expression-name-row">
-          <label>{{localize "PORTRAIT_SPRITES.Creator.ExpressionLabel" index=@index}}</label>
-          <input name="expressionNames.{{@index}}" type="text" value="{{this}}" />
+  <div class="creator-tab-panel active" data-tab-panel="coordinates">
+    <section class="creator-section preview-section">
+      <h3>{{localize "PORTRAIT_SPRITES.Creator.Sections.Preview"}}</h3>
+      <div class="preview-layout {{previewLayoutClass}}">
+        <div class="preview-wrapper">
+          <canvas class="sprite-preview-canvas"></canvas>
+          <p class="image-dimensions">{{imageDimensions}}</p>
+          <p class="helper-text">
+            {{localize "PORTRAIT_SPRITES.Creator.PreviewHint"}}
+          </p>
         </div>
-      {{/each}}
-    </div>
-  </section>
+        <section class="creator-section coordinate-section">
+          <h3>{{localize "PORTRAIT_SPRITES.Creator.Tabs.Coordinates"}}</h3>
+          <section class="creator-subsection">
+            <h4>{{localize "PORTRAIT_SPRITES.Creator.Sections.Source"}}</h4>
+            <div class="form-row">
+              <label for="portrait-spritesheet">{{localize "PORTRAIT_SPRITES.Creator.Spritesheet"}}</label>
+              <div class="input-with-button">
+                <input id="portrait-spritesheet" name="spritesheet" type="text" value="{{spritesheet}}" />
+                <button type="button" class="file-picker" data-action="pick-spritesheet">
+                  <i class="fas fa-folder-open"></i>
+                </button>
+              </div>
+            </div>
+          </section>
 
-  <section class="creator-section">
-    <h3>{{localize "PORTRAIT_SPRITES.Creator.Sections.Preview"}}</h3>
-    <div class="preview-wrapper">
-      <canvas class="sprite-preview-canvas"></canvas>
-      <p class="helper-text">
-        {{localize "PORTRAIT_SPRITES.Creator.PreviewHint"}}
-      </p>
-    </div>
-  </section>
+          <section class="creator-subsection">
+            <h4>{{localize "PORTRAIT_SPRITES.Creator.Sections.Body"}}</h4>
+            <div class="grid-row">
+              <label>{{localize "PORTRAIT_SPRITES.Creator.BodyFrame"}}</label>
+              <div class="grid-inputs small-coordinate-inputs">
+                <label class="coordinate-field"><span>X</span><input name="bodyFrame.x" type="number" value="{{bodyFrame.x}}" min="0" aria-label="Body x" /></label>
+                <label class="coordinate-field"><span>Y</span><input name="bodyFrame.y" type="number" value="{{bodyFrame.y}}" min="0" aria-label="Body y" /></label>
+                <label class="coordinate-field"><span>W</span><input name="bodyFrame.width" type="number" value="{{bodyFrame.width}}" min="1" aria-label="Body width" /></label>
+                <label class="coordinate-field"><span>H</span><input name="bodyFrame.height" type="number" value="{{bodyFrame.height}}" min="1" aria-label="Body height" /></label>
+              </div>
+            </div>
+            <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.BodyFrameHint"}}</p>
+          </section>
+
+          <section class="creator-subsection">
+            <h4>{{localize "PORTRAIT_SPRITES.Creator.Sections.Expressions"}}</h4>
+            <div class="grid-row">
+              <label>{{localize "PORTRAIT_SPRITES.Creator.HeadGrid"}}</label>
+              <div class="grid-inputs small-coordinate-inputs">
+                <label class="coordinate-field"><span>X</span><input name="headGrid.startX" type="number" value="{{headGrid.startX}}" min="0" aria-label="Head grid x" /></label>
+                <label class="coordinate-field"><span>Y</span><input name="headGrid.startY" type="number" value="{{headGrid.startY}}" min="0" aria-label="Head grid y" /></label>
+                <label class="coordinate-field"><span>W</span><input name="headGrid.cellWidth" type="number" value="{{headGrid.cellWidth}}" min="1" aria-label="Head cell width" /></label>
+                <label class="coordinate-field"><span>H</span><input name="headGrid.cellHeight" type="number" value="{{headGrid.cellHeight}}" min="1" aria-label="Head cell height" /></label>
+              </div>
+            </div>
+            <div class="grid-row">
+              <label>{{localize "PORTRAIT_SPRITES.Creator.HeadGridLayout"}}</label>
+              <div class="grid-inputs grid-layout-inputs small-coordinate-inputs">
+                <label class="coordinate-field"><span>Cols</span><input name="headGrid.columns" type="number" value="{{headGrid.columns}}" min="1" aria-label="Head grid columns" /></label>
+                <label class="coordinate-field"><span>Rows</span><input name="headGrid.rows" type="number" value="{{headGrid.rows}}" min="1" aria-label="Head grid rows" /></label>
+              </div>
+            </div>
+            <div class="grid-row">
+              <label>{{localize "PORTRAIT_SPRITES.Creator.HeadOffset"}}</label>
+              <div class="grid-inputs grid-layout-inputs small-coordinate-inputs">
+                <label class="coordinate-field"><span>X</span><input name="headOffset.x" type="number" value="{{headOffset.x}}" aria-label="Head offset x" /></label>
+                <label class="coordinate-field"><span>Y</span><input name="headOffset.y" type="number" value="{{headOffset.y}}" aria-label="Head offset y" /></label>
+              </div>
+            </div>
+          </section>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div class="creator-tab-panel" data-tab-panel="names">
+    <section class="creator-section expression-section">
+      <h3>{{localize "PORTRAIT_SPRITES.Creator.Tabs.Names"}}</h3>
+      <div class="expression-names expression-name-grid">
+        {{#each expressionPreviews}}
+          <div class="expression-name-row">
+            <canvas class="expression-preview-canvas" data-expression-index="{{@index}}" width="96" height="96"></canvas>
+            <label>{{localize "PORTRAIT_SPRITES.Creator.ExpressionLabel" index=displayIndex}}</label>
+            <input name="expressionNames.{{@index}}" type="text" value="{{name}}" />
+          </div>
+        {{/each}}
+      </div>
+    </section>
+  </div>
+
+  <div class="creator-tab-panel" data-tab-panel="final">
+    <section class="creator-section final-preview-section">
+      <h3>{{localize "PORTRAIT_SPRITES.Creator.Tabs.Final"}}</h3>
+      <div class="final-preview-layout">
+        <canvas class="final-sprite-preview-canvas"></canvas>
+        <div class="final-magnifier-panel">
+          <canvas class="final-magnifier-canvas" width="220" height="220"></canvas>
+          <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.MagnifierHint"}}</p>
+        </div>
+      </div>
+      <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.FinalPreviewHint"}}</p>
+    </section>
+  </div>
 
   <footer class="creator-footer">
     <button type="button" class="create-sprite" data-action="create-sprite">
