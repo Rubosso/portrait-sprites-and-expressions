@@ -40,10 +40,12 @@
       },
       "Tabs": {
         "Coordinates": "Coordinates",
-        "Names": "Expression Names"
+        "Names": "Expression Names",
+        "Final": "Final Preview"
       },
       "ImageDimensions": "Original image: {width} \u00d7 {height}px",
-      "ImageDimensionsUnknown": "Original image dimensions unavailable until a spritesheet is loaded."
+      "ImageDimensionsUnknown": "Original image dimensions unavailable until a spritesheet is loaded.",
+      "FinalPreviewHint": "Cycles through expressions once per second using the current body, head grid, and head offset settings."
     },
     "DefaultExpression": "Default Expression",
     "Tools": {

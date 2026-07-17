@@ -349,3 +349,58 @@
 .portrait-sprite-creator .sprite-preview-canvas:active {
   cursor: grabbing;
 }
+
+.portrait-sprite-creator .creator-tabs-top {
+  margin-bottom: 12px;
+}
+
+.portrait-sprite-creator .input-with-button {
+  align-items: stretch;
+}
+
+.portrait-sprite-creator .input-with-button input {
+  flex: 1 1 auto;
+}
+
+.portrait-sprite-creator .input-with-button .file-picker {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  line-height: 1;
+  min-height: 0;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.portrait-sprite-creator .expression-name-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.portrait-sprite-creator .expression-name-grid .expression-name-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.portrait-sprite-creator .expression-name-grid .expression-preview-canvas {
+  border: 0;
+  height: 96px;
+  width: 96px;
+}
+
+.portrait-sprite-creator .final-preview-section {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portrait-sprite-creator .final-sprite-preview-canvas {
+  background: transparent;
+  border: 0;
+  max-height: 70vh;
+  max-width: 100%;
+  object-fit: contain;
+}

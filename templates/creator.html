@@ -1,26 +1,29 @@
 <form class="sprite-creator-form">
-  <section class="creator-section preview-section">
-    <h3>{{localize "PORTRAIT_SPRITES.Creator.Sections.Preview"}}</h3>
-    <div class="preview-layout {{previewLayoutClass}}">
-      <div class="preview-wrapper">
-        <canvas class="sprite-preview-canvas"></canvas>
-        <p class="image-dimensions">{{imageDimensions}}</p>
-        <p class="helper-text">
-          {{localize "PORTRAIT_SPRITES.Creator.PreviewHint"}}
-        </p>
-      </div>
-      <section class="creator-section coordinate-section">
-        <h3>{{localize "PORTRAIT_SPRITES.Creator.Tabs.Coordinates"}}</h3>
-        <div class="creator-tabs" role="tablist">
-          <button type="button" class="creator-tab active" data-tab="coordinates">
-            {{localize "PORTRAIT_SPRITES.Creator.Tabs.Coordinates"}}
-          </button>
-          <button type="button" class="creator-tab" data-tab="names">
-            {{localize "PORTRAIT_SPRITES.Creator.Tabs.Names"}}
-          </button>
-        </div>
+  <div class="creator-tabs creator-tabs-top" role="tablist">
+    <button type="button" class="creator-tab active" data-tab="coordinates">
+      {{localize "PORTRAIT_SPRITES.Creator.Tabs.Coordinates"}}
+    </button>
+    <button type="button" class="creator-tab" data-tab="names">
+      {{localize "PORTRAIT_SPRITES.Creator.Tabs.Names"}}
+    </button>
+    <button type="button" class="creator-tab" data-tab="final">
+      {{localize "PORTRAIT_SPRITES.Creator.Tabs.Final"}}
+    </button>
+  </div>
 
-        <div class="creator-tab-panel active" data-tab-panel="coordinates">
+  <div class="creator-tab-panel active" data-tab-panel="coordinates">
+    <section class="creator-section preview-section">
+      <h3>{{localize "PORTRAIT_SPRITES.Creator.Sections.Preview"}}</h3>
+      <div class="preview-layout {{previewLayoutClass}}">
+        <div class="preview-wrapper">
+          <canvas class="sprite-preview-canvas"></canvas>
+          <p class="image-dimensions">{{imageDimensions}}</p>
+          <p class="helper-text">
+            {{localize "PORTRAIT_SPRITES.Creator.PreviewHint"}}
+          </p>
+        </div>
+        <section class="creator-section coordinate-section">
+          <h3>{{localize "PORTRAIT_SPRITES.Creator.Tabs.Coordinates"}}</h3>
           <section class="creator-subsection">
             <h4>{{localize "PORTRAIT_SPRITES.Creator.Sections.Source"}}</h4>
             <div class="form-row">
@@ -74,22 +77,33 @@
               </div>
             </div>
           </section>
-        </div>
+        </section>
+      </div>
+    </section>
+  </div>
 
-        <div class="creator-tab-panel" data-tab-panel="names">
-          <div class="expression-names">
-            {{#each expressionPreviews}}
-              <div class="expression-name-row">
-                <canvas class="expression-preview-canvas" data-expression-index="{{@index}}" width="72" height="72"></canvas>
-                <label>{{localize "PORTRAIT_SPRITES.Creator.ExpressionLabel" index=displayIndex}}</label>
-                <input name="expressionNames.{{@index}}" type="text" value="{{name}}" />
-              </div>
-            {{/each}}
+  <div class="creator-tab-panel" data-tab-panel="names">
+    <section class="creator-section expression-section">
+      <h3>{{localize "PORTRAIT_SPRITES.Creator.Tabs.Names"}}</h3>
+      <div class="expression-names expression-name-grid">
+        {{#each expressionPreviews}}
+          <div class="expression-name-row">
+            <canvas class="expression-preview-canvas" data-expression-index="{{@index}}" width="96" height="96"></canvas>
+            <label>{{localize "PORTRAIT_SPRITES.Creator.ExpressionLabel" index=displayIndex}}</label>
+            <input name="expressionNames.{{@index}}" type="text" value="{{name}}" />
           </div>
-        </div>
-      </section>
-    </div>
-  </section>
+        {{/each}}
+      </div>
+    </section>
+  </div>
+
+  <div class="creator-tab-panel" data-tab-panel="final">
+    <section class="creator-section final-preview-section">
+      <h3>{{localize "PORTRAIT_SPRITES.Creator.Tabs.Final"}}</h3>
+      <canvas class="final-sprite-preview-canvas"></canvas>
+      <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.FinalPreviewHint"}}</p>
+    </section>
+  </div>
 
   <footer class="creator-footer">
     <button type="button" class="create-sprite" data-action="create-sprite">

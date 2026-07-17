@@ -5,6 +5,8 @@ export class PortraitSpriteCreator extends Application {
     this.activeTab = "coordinates";
     this.previewImage = null;
     this.dragState = null;
+    this.finalPreviewIndex = 0;
+    this.finalPreviewInterval = null;
   }
 
   static get defaultOptions() {
@@ -80,6 +82,7 @@ export class PortraitSpriteCreator extends Application {
     this.#activateTab(html, this.activeTab);
     this.#renderPreview(html);
     this.#renderExpressionPreviews(html);
+    this.#renderFinalPreview(html);
     this.#activatePreviewDragging(html);
   }
 
@@ -123,21 +126,21 @@ export class PortraitSpriteCreator extends Application {
     return {
       spritesheet: "",
       bodyFrame: {
-        x: 0,
-        y: 0,
-        width: 320,
-        height: 480
+        x: 371,
+        y: 150,
+        width: 303,
+        height: 619
       },
       headGrid: {
         startX: 0,
-        startY: 0,
-        cellWidth: 128,
-        cellHeight: 128,
+        startY: 768,
+        cellWidth: 256,
+        cellHeight: 256,
         columns: 4,
-        rows: 4
+        rows: 7
       },
       headOffset: {
-        x: 0,
+        x: 13,
         y: 0
       },
       expressionNames: [],
@@ -181,6 +184,17 @@ export class PortraitSpriteCreator extends Application {
   #autoConfigureFrames(image) {
     const imageWidth = image.naturalWidth || image.width;
     const imageHeight = image.naturalHeight || image.height;
+    const knownConfiguration = this.#getKnownConfiguration(imageWidth, imageHeight);
+    if (knownConfiguration) {
+      this.formData.bodyFrame = knownConfiguration.bodyFrame;
+      this.formData.headGrid = {
+        ...this.formData.headGrid,
+        ...knownConfiguration.headGrid
+      };
+      this.formData.headOffset = knownConfiguration.headOffset;
+      return;
+    }
+
     const measured = this.#measureSpritesheet(image, imageWidth, imageHeight);
     if (measured) {
       this.formData.bodyFrame = measured.bodyFrame;
@@ -232,6 +246,31 @@ export class PortraitSpriteCreator extends Application {
       cellHeight: Math.max(1, Math.floor(imageHeight / rows)),
       columns,
       rows
+    };
+  }
+
+  #getKnownConfiguration(imageWidth, imageHeight) {
+    if (imageWidth !== 1024 || imageHeight < 1792) return null;
+
+    return {
+      bodyFrame: {
+        x: 371,
+        y: 150,
+        width: 303,
+        height: 619
+      },
+      headGrid: {
+        startX: 0,
+        startY: 768,
+        cellWidth: 256,
+        cellHeight: 256,
+        columns: 4,
+        rows: 7
+      },
+      headOffset: {
+        x: 13,
+        y: 0
+      }
     };
   }
 
@@ -420,6 +459,7 @@ export class PortraitSpriteCreator extends Application {
       this.formData.imageHeight = canvasElement.height;
       html.find(".image-dimensions").text(this.#getImageDimensionsText());
       this.#drawOverlays(context);
+      this.#renderFinalPreview(html);
     };
     image.src = this.formData.spritesheet;
   }
@@ -453,12 +493,69 @@ export class PortraitSpriteCreator extends Application {
           canvasElement.width,
           canvasElement.height
         );
-        context.strokeStyle = "rgba(34, 211, 238, 0.98)";
-        context.lineWidth = 4;
-        context.strokeRect(2, 2, canvasElement.width - 4, canvasElement.height - 4);
       });
     };
     image.src = this.formData.spritesheet;
+  }
+
+
+  #renderFinalPreview(html) {
+    const canvasElement = html.find(".final-sprite-preview-canvas")[0];
+    if (!canvasElement) return;
+    if (this.finalPreviewInterval) {
+      clearInterval(this.finalPreviewInterval);
+      this.finalPreviewInterval = null;
+    }
+
+    const draw = () => this.#drawFinalPreview(canvasElement);
+    draw();
+    this.finalPreviewInterval = setInterval(() => {
+      this.finalPreviewIndex = (this.finalPreviewIndex + 1) % Math.max(1, this.#getExpressionCount());
+      draw();
+    }, 1000);
+  }
+
+  #drawFinalPreview(canvasElement) {
+    const context = canvasElement.getContext("2d");
+    if (!context) return;
+    canvasElement.width = Math.max(1, this.formData.bodyFrame.width);
+    canvasElement.height = Math.max(1, this.formData.bodyFrame.height);
+    context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+    if (!this.previewImage) {
+      context.fillStyle = "#111827";
+      context.fillRect(0, 0, canvasElement.width, canvasElement.height);
+      return;
+    }
+
+    context.drawImage(
+      this.previewImage,
+      this.formData.bodyFrame.x,
+      this.formData.bodyFrame.y,
+      this.formData.bodyFrame.width,
+      this.formData.bodyFrame.height,
+      0,
+      0,
+      this.formData.bodyFrame.width,
+      this.formData.bodyFrame.height
+    );
+
+    const frameIndex = this.finalPreviewIndex % Math.max(1, this.#getExpressionCount());
+    const column = frameIndex % this.formData.headGrid.columns;
+    const row = Math.floor(frameIndex / this.formData.headGrid.columns);
+    const sourceX = this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth;
+    const sourceY = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
+    context.drawImage(
+      this.previewImage,
+      sourceX,
+      sourceY,
+      this.formData.headGrid.cellWidth,
+      this.formData.headGrid.cellHeight,
+      this.formData.headOffset.x,
+      this.formData.headOffset.y,
+      this.formData.headGrid.cellWidth,
+      this.formData.headGrid.cellHeight
+    );
   }
 
 
@@ -578,7 +675,9 @@ export class PortraitSpriteCreator extends Application {
       "headGrid.startX": this.formData.headGrid.startX,
       "headGrid.startY": this.formData.headGrid.startY,
       "headGrid.cellWidth": this.formData.headGrid.cellWidth,
-      "headGrid.cellHeight": this.formData.headGrid.cellHeight
+      "headGrid.cellHeight": this.formData.headGrid.cellHeight,
+      "headOffset.x": this.formData.headOffset.x,
+      "headOffset.y": this.formData.headOffset.y
     };
     Object.entries(values).forEach(([name, value]) => {
       html.find(`[name='${name}']`).val(value);
@@ -611,10 +710,6 @@ export class PortraitSpriteCreator extends Application {
     context.lineWidth = 5;
     this.#strokeInsetRect(context, this.formData.bodyFrame.x, this.formData.bodyFrame.y, this.formData.bodyFrame.width, this.formData.bodyFrame.height);
 
-    context.strokeStyle = "rgba(244, 114, 182, 0.98)";
-    context.lineWidth = 5;
-    this.#strokeInsetRect(context, this.formData.headGrid.startX, this.formData.headGrid.startY, this.formData.headGrid.columns * this.formData.headGrid.cellWidth, this.formData.headGrid.rows * this.formData.headGrid.cellHeight);
-
     context.lineWidth = 4;
     const count = this.#getExpressionCount();
     for (let i = 0; i < count; i += 1) {
@@ -625,6 +720,10 @@ export class PortraitSpriteCreator extends Application {
       context.strokeStyle = "rgba(34, 211, 238, 0.98)";
       this.#strokeInsetRect(context, x, y, this.formData.headGrid.cellWidth, this.formData.headGrid.cellHeight);
     }
+
+    context.strokeStyle = "rgba(244, 114, 182, 0.98)";
+    context.lineWidth = 7;
+    this.#strokeInsetRect(context, this.formData.headGrid.startX, this.formData.headGrid.startY, this.formData.headGrid.columns * this.formData.headGrid.cellWidth, this.formData.headGrid.rows * this.formData.headGrid.cellHeight);
 
     context.restore();
   }
