@@ -24,4 +24,30 @@
       <input id="portrait-expression-name" class="expression-name-input" type="text" value="{{currentExpressionName}}" />
     </div>
   {{/if}}
+  <div class="expression-select-row">
+    <label for="portrait-sprite-rotation">{{localize 'PORTRAIT_SPRITES.HUD.Rotation'}}</label>
+    <div class="expression-controls">
+      <button class="rotate-left" type="button" title="{{localize 'PORTRAIT_SPRITES.HUD.RotateLeft'}}">
+        <i class="fas fa-rotate-left"></i>
+      </button>
+      <input id="portrait-sprite-rotation" class="expression-name-input rotation-input" type="number" step="1" value="{{rotationDegrees}}" />
+      <button class="rotate-right" type="button" title="{{localize 'PORTRAIT_SPRITES.HUD.RotateRight'}}">
+        <i class="fas fa-rotate-right"></i>
+      </button>
+    </div>
+  </div>
+  <div class="expression-select-row">
+    <label for="portrait-sprite-scale-x">{{localize 'PORTRAIT_SPRITES.HUD.ScaleX'}}</label>
+    <input id="portrait-sprite-scale-x" class="expression-name-input scale-x-input" type="number" min="1" max="500" step="1" value="{{scaleXPercent}}" />
+  </div>
+  <div class="expression-select-row">
+    <label for="portrait-sprite-scale-y">{{localize 'PORTRAIT_SPRITES.HUD.ScaleY'}}</label>
+    <input id="portrait-sprite-scale-y" class="expression-name-input scale-y-input" type="number" min="1" max="500" step="1" value="{{scaleYPercent}}" />
+  </div>
+  <div class="expression-controls">
+    <button class="reset-size" type="button" title="{{localize 'PORTRAIT_SPRITES.HUD.ResetSizeHint'}}">
+      <i class="fas fa-undo"></i>
+      {{localize 'PORTRAIT_SPRITES.HUD.ResetSize'}}
+    </button>
+  </div>
 </div>
