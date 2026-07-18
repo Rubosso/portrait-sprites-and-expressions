@@ -118,9 +118,6 @@ function drawHeadPreview(canvasElement, image, frame) {
   context.clearRect(0, 0, canvasElement.width, canvasElement.height);
   if (!image || !frame) return;
 
-  // The expression cells include a lot of shoulder and torso space. Crop the
-  // lower portion and a small amount from each side so the picker reads as a
-  // face selector instead of another full portrait preview.
   const sourceX = frame.x + frame.width * FACE_CROP_X_INSET;
   const sourceY = frame.y;
   const sourceWidth = frame.width * (1 - FACE_CROP_X_INSET * 2);
@@ -149,26 +146,90 @@ function drawHeadPreview(canvasElement, image, frame) {
   );
 }
 
-function renderExpressionCards(application) {
-  const root = application.element;
-  if (!root) return;
+function getExpressionRecords(application) {
+  const sprite = application.sprite;
+  const noExpressionLabel = game.i18n.localize("PORTRAIT_SPRITES.HUD.NoExpression");
+  return [
+    {
+      index: NO_EXPRESSION,
+      label: noExpressionLabel,
+      frame: null,
+      isNoExpression: true,
+      isActive: sprite?.currentExpression === NO_EXPRESSION
+    },
+    ...(sprite?.headFrames ?? []).map((frame, index) => ({
+      index,
+      label: frame.name || game.i18n.format("PORTRAIT_SPRITES.HUD.ExpressionNumber", { index: index + 1 }),
+      frame: {
+        x: Number(frame.x),
+        y: Number(frame.y),
+        width: Number(frame.width),
+        height: Number(frame.height)
+      },
+      isNoExpression: false,
+      isActive: sprite.currentExpression === index
+    }))
+  ];
+}
+
+async function activateExpression(application, index) {
+  const grid = application.element?.querySelector?.(".expression-choice-grid");
+  application._portraitPickerScrollTop = grid?.scrollTop ?? 0;
+  if (!Number.isInteger(index)) return;
+
+  application.sprite.currentExpression = index;
+  application.sprite.updateExpression();
+  await application.sprite._saveToScene();
+  application.render(false);
+}
+
+function createExpressionCard(application, record) {
+  const card = document.createElement("div");
+  card.className = `expression-choice${record.isActive ? " is-active" : ""}`;
+  card.dataset.expressionIndex = String(record.index);
+  card.setAttribute("role", "option");
+  card.setAttribute("aria-selected", record.isActive ? "true" : "false");
+  card.tabIndex = 0;
+
+  const canvasElement = document.createElement("canvas");
+  canvasElement.className = "expression-choice-preview";
+  canvasElement.width = 128;
+  canvasElement.height = 128;
+  canvasElement.setAttribute("aria-hidden", "true");
+
+  const label = document.createElement("span");
+  label.className = "expression-choice-label";
+  label.textContent = record.label;
+
+  card.append(canvasElement, label);
+  card.addEventListener("click", event => {
+    event.preventDefault();
+    activateExpression(application, record.index);
+  });
+  card.addEventListener("keydown", event => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    activateExpression(application, record.index);
+  });
+
+  return { card, canvasElement, record };
+}
+
+function rebuildExpressionCards(application) {
+  const grid = application.element?.querySelector?.(".expression-choice-grid");
+  if (!grid) return;
 
   const generation = (application._portraitPreviewGeneration ?? 0) + 1;
   application._portraitPreviewGeneration = generation;
+  const cards = getExpressionRecords(application).map(record => createExpressionCard(application, record));
+  grid.replaceChildren(...cards.map(({ card }) => card));
+
   loadImage(application.sprite?.spritesheet).then(image => {
     if (application._portraitPreviewGeneration !== generation || !application.element?.isConnected) return;
-
-    application.element.querySelectorAll(".expression-choice[data-expression-index]").forEach(card => {
-      const index = Number(card.dataset.expressionIndex);
-      const canvasElement = card.querySelector(".expression-choice-preview");
-      if (!canvasElement || !Number.isInteger(index)) return;
-
-      if (index === NO_EXPRESSION) {
-        drawNoExpressionPreview(canvasElement);
-        return;
-      }
-      drawHeadPreview(canvasElement, image, application.sprite?.headFrames?.[index]);
-    });
+    for (const { canvasElement, record } of cards) {
+      if (record.isNoExpression) drawNoExpressionPreview(canvasElement);
+      else drawHeadPreview(canvasElement, image, record.frame);
+    }
   });
 }
 
@@ -188,33 +249,9 @@ export function installExpressionPickerAlignment(PortraitExpressionPicker) {
   PortraitExpressionPicker.prototype._onRender = function(context, options) {
     baseOnRender?.call(this, context, options);
 
-    const activateCard = async card => {
-      const grid = this.element?.querySelector?.(".expression-choice-grid");
-      this._portraitPickerScrollTop = grid?.scrollTop ?? 0;
-      const index = Number(card.dataset.expressionIndex);
-      if (!Number.isInteger(index)) return;
-
-      this.sprite.currentExpression = index;
-      this.sprite.updateExpression();
-      await this.sprite._saveToScene();
-      this.render(false);
-    };
-
-    this.element.querySelectorAll(".expression-choice[data-expression-index]").forEach(card => {
-      card.addEventListener("click", event => {
-        event.preventDefault();
-        activateCard(card);
-      });
-      card.addEventListener("keydown", event => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        activateCard(card);
-      });
-    });
-
     window.requestAnimationFrame(() => {
       configureExpressionPicker(this);
-      renderExpressionCards(this);
+      rebuildExpressionCards(this);
       window.requestAnimationFrame(() => configureExpressionPicker(this));
     });
   };
