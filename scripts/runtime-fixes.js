@@ -4,8 +4,10 @@ const VIEWPORT_MARGIN = 64;
 const PICKER_MIN_HEIGHT = 360;
 const PICKER_DEFAULT_HEIGHT = 620;
 const PICKER_MIN_CARD_WIDTH = 112;
-const FACE_CROP_X_INSET = 0.05;
 const FACE_CROP_HEIGHT = 0.78;
+const FACE_BOUNDS_PADDING = 0.04;
+const ALPHA_THRESHOLD = 8;
+const visibleFrameBoundsCache = new WeakMap();
 
 function getContentElement(root) {
   return root?.querySelector?.('[data-application-part="content"]')
@@ -112,33 +114,141 @@ function drawNoExpressionPreview(canvasElement) {
   context.restore();
 }
 
+function getFallbackFaceBounds(frame) {
+  return {
+    x: Number(frame.x),
+    y: Number(frame.y),
+    width: Math.max(1, Number(frame.width)),
+    height: Math.max(1, Number(frame.height) * FACE_CROP_HEIGHT)
+  };
+}
+
+function getVisibleFaceBounds(image, frame) {
+  if (!image || !frame) return null;
+
+  let imageCache = visibleFrameBoundsCache.get(image);
+  if (!imageCache) {
+    imageCache = new Map();
+    visibleFrameBoundsCache.set(image, imageCache);
+  }
+
+  const frameX = Math.round(Number(frame.x));
+  const frameY = Math.round(Number(frame.y));
+  const frameWidth = Math.max(1, Math.round(Number(frame.width)));
+  const frameHeight = Math.max(1, Math.round(Number(frame.height)));
+  const cacheKey = `${frameX}:${frameY}:${frameWidth}:${frameHeight}`;
+  if (imageCache.has(cacheKey)) return imageCache.get(cacheKey);
+
+  const fallback = getFallbackFaceBounds(frame);
+  const sample = document.createElement("canvas");
+  sample.width = frameWidth;
+  sample.height = frameHeight;
+  const context = sample.getContext("2d", { willReadFrequently: true });
+  if (!context) {
+    imageCache.set(cacheKey, fallback);
+    return fallback;
+  }
+
+  context.clearRect(0, 0, frameWidth, frameHeight);
+  context.drawImage(
+    image,
+    frameX,
+    frameY,
+    frameWidth,
+    frameHeight,
+    0,
+    0,
+    frameWidth,
+    frameHeight
+  );
+
+  let pixels;
+  try {
+    pixels = context.getImageData(0, 0, frameWidth, frameHeight).data;
+  } catch (_error) {
+    imageCache.set(cacheKey, fallback);
+    return fallback;
+  }
+
+  let minY = frameHeight;
+  let maxY = -1;
+  for (let y = 0; y < frameHeight; y += 1) {
+    for (let x = 0; x < frameWidth; x += 1) {
+      if (pixels[(y * frameWidth + x) * 4 + 3] <= ALPHA_THRESHOLD) continue;
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+  }
+
+  if (maxY < minY) {
+    imageCache.set(cacheKey, fallback);
+    return fallback;
+  }
+
+  const visibleHeight = maxY - minY + 1;
+  const faceMaxY = Math.min(maxY, minY + Math.max(1, Math.round(visibleHeight * FACE_CROP_HEIGHT)) - 1);
+  let minX = frameWidth;
+  let maxX = -1;
+
+  // Measure horizontal bounds only through the face crop. This excludes wide
+  // shoulders and, importantly, removes asymmetric transparent padding from
+  // the sprite-sheet cell before centering the thumbnail.
+  for (let y = minY; y <= faceMaxY; y += 1) {
+    for (let x = 0; x < frameWidth; x += 1) {
+      if (pixels[(y * frameWidth + x) * 4 + 3] <= ALPHA_THRESHOLD) continue;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+    }
+  }
+
+  if (maxX < minX) {
+    imageCache.set(cacheKey, fallback);
+    return fallback;
+  }
+
+  const measuredWidth = maxX - minX + 1;
+  const measuredHeight = faceMaxY - minY + 1;
+  const paddingX = Math.max(1, Math.round(measuredWidth * FACE_BOUNDS_PADDING));
+  const paddingY = Math.max(1, Math.round(measuredHeight * FACE_BOUNDS_PADDING));
+  minX = Math.max(0, minX - paddingX);
+  maxX = Math.min(frameWidth - 1, maxX + paddingX);
+  minY = Math.max(0, minY - paddingY);
+  const paddedMaxY = Math.min(frameHeight - 1, faceMaxY + paddingY);
+
+  const bounds = {
+    x: frameX + minX,
+    y: frameY + minY,
+    width: Math.max(1, maxX - minX + 1),
+    height: Math.max(1, paddedMaxY - minY + 1)
+  };
+  imageCache.set(cacheKey, bounds);
+  return bounds;
+}
+
 function drawHeadPreview(canvasElement, image, frame) {
   const context = canvasElement.getContext("2d");
   if (!context) return;
   context.clearRect(0, 0, canvasElement.width, canvasElement.height);
   if (!image || !frame) return;
 
-  const sourceX = frame.x + frame.width * FACE_CROP_X_INSET;
-  const sourceY = frame.y;
-  const sourceWidth = frame.width * (1 - FACE_CROP_X_INSET * 2);
-  const sourceHeight = frame.height * FACE_CROP_HEIGHT;
+  const source = getVisibleFaceBounds(image, frame) ?? getFallbackFaceBounds(frame);
   const padding = 6;
   const scale = Math.min(
-    (canvasElement.width - padding * 2) / Math.max(1, sourceWidth),
-    (canvasElement.height - padding * 2) / Math.max(1, sourceHeight)
+    (canvasElement.width - padding * 2) / Math.max(1, source.width),
+    (canvasElement.height - padding * 2) / Math.max(1, source.height)
   );
-  const width = sourceWidth * scale;
-  const height = sourceHeight * scale;
+  const width = source.width * scale;
+  const height = source.height * scale;
   const x = (canvasElement.width - width) / 2;
   const y = (canvasElement.height - height) / 2;
 
   context.imageSmoothingEnabled = false;
   context.drawImage(
     image,
-    sourceX,
-    sourceY,
-    sourceWidth,
-    sourceHeight,
+    source.x,
+    source.y,
+    source.width,
+    source.height,
     x,
     y,
     width,
@@ -190,16 +300,41 @@ function createExpressionCard(application, record) {
   card.setAttribute("role", "option");
   card.setAttribute("aria-selected", record.isActive ? "true" : "false");
   card.tabIndex = 0;
+  Object.assign(card.style, {
+    alignItems: "center",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    minWidth: "0",
+    textAlign: "center",
+    width: "100%"
+  });
 
   const canvasElement = document.createElement("canvas");
   canvasElement.className = "expression-choice-preview";
   canvasElement.width = 128;
   canvasElement.height = 128;
   canvasElement.setAttribute("aria-hidden", "true");
+  Object.assign(canvasElement.style, {
+    alignSelf: "center",
+    display: "block",
+    flex: "0 0 auto",
+    margin: "0 auto",
+    maxWidth: "100%"
+  });
 
   const label = document.createElement("span");
   label.className = "expression-choice-label";
   label.textContent = record.label;
+  Object.assign(label.style, {
+    alignSelf: "stretch",
+    boxSizing: "border-box",
+    display: "block",
+    margin: "0",
+    textAlign: "center",
+    width: "100%"
+  });
 
   card.append(canvasElement, label);
   card.addEventListener("click", event => {
