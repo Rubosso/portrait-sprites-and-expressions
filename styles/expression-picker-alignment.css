@@ -1,0 +1,35 @@
+/* Final Choose Expression alignment overrides. */
+#portrait-expression-picker .expression-choice-grid,
+.portrait-expression-picker .expression-choice-grid {
+  justify-items: stretch !important;
+}
+
+#portrait-expression-picker .expression-choice,
+.portrait-expression-picker .expression-choice {
+  align-items: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+
+#portrait-expression-picker .expression-choice-preview,
+.portrait-expression-picker .expression-choice-preview {
+  align-self: center !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+#portrait-expression-picker .expression-choice-label,
+.portrait-expression-picker .expression-choice-label {
+  align-self: stretch !important;
+  display: block !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  text-align: center !important;
+  width: 100% !important;
+}
