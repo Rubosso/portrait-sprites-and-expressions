@@ -27,7 +27,9 @@
     },
     "ExpressionPicker": {
       "Title": "Choose Expression",
-      "Hint": "Select an expression from its face thumbnail. No Expression removes the head layer."
+      "Hint": "Select an expression from its face thumbnail. No Expression removes the head layer.",
+      "SearchPlaceholder": "Search expressions by name…",
+      "ClearSearch": "Clear expression search"
     },
     "Creator": {
       "Title": "Portrait Sprite Creator",
