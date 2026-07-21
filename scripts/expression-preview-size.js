@@ -2,11 +2,27 @@ const PREVIEW_SIZE = 220;
 const CARD_WIDTH = 248;
 const CARD_HEIGHT = 278;
 const GRID_GAP = 16;
+const DEFAULT_PICKER_WIDTH = 1040;
+const DEFAULT_PICKER_HEIGHT = 760;
+const VIEWPORT_MARGIN = 64;
 const SELECTED_BORDER = "3px solid #fbbf24";
 const DEFAULT_BORDER = "2px solid rgba(255, 255, 255, 0.12)";
+const NO_EXPRESSION_REDRAW_DELAYS = [0, 50, 150, 400, 1000];
 
 function normalizeSearchText(value) {
   return String(value ?? "").trim().toLocaleLowerCase();
+}
+
+function applyDefaultPickerSize(application) {
+  if (application._portraitDefaultPickerSizeApplied) return;
+  application._portraitDefaultPickerSizeApplied = true;
+
+  const maximumWidth = Math.max(520, window.innerWidth - VIEWPORT_MARGIN);
+  const maximumHeight = Math.max(420, window.innerHeight - VIEWPORT_MARGIN);
+  application.setPosition?.({
+    width: Math.min(DEFAULT_PICKER_WIDTH, maximumWidth),
+    height: Math.min(DEFAULT_PICKER_HEIGHT, maximumHeight)
+  });
 }
 
 function fixPreviewCanvasSize(canvasElement) {
@@ -49,6 +65,85 @@ function fixPreviewCanvasSize(canvasElement) {
   canvasElement.style.setProperty("min-height", `${PREVIEW_SIZE}px`, "important");
   canvasElement.style.setProperty("min-width", `${PREVIEW_SIZE}px`, "important");
   canvasElement.style.setProperty("width", `${PREVIEW_SIZE}px`, "important");
+}
+
+function drawNeutralHeadPreview(canvasElement) {
+  if (!canvasElement) return;
+  fixPreviewCanvasSize(canvasElement);
+
+  const context = canvasElement.getContext("2d");
+  if (!context) return;
+
+  const { width, height } = canvasElement;
+  const centerX = width / 2;
+  const headCenterY = height * 0.46;
+  const headRadiusX = width * 0.25;
+  const headRadiusY = height * 0.32;
+  const lineWidth = Math.max(4, width * 0.022);
+
+  context.clearRect(0, 0, width, height);
+  context.save();
+  context.lineJoin = "round";
+  context.lineCap = "round";
+
+  // A deliberately featureless head communicates that the head layer is
+  // hidden without suggesting any particular facial expression.
+  context.fillStyle = "rgba(203, 213, 225, 0.22)";
+  context.strokeStyle = "rgba(248, 250, 252, 0.88)";
+  context.lineWidth = lineWidth;
+
+  context.beginPath();
+  context.ellipse(
+    centerX - headRadiusX * 1.03,
+    headCenterY,
+    headRadiusX * 0.13,
+    headRadiusY * 0.25,
+    0,
+    0,
+    Math.PI * 2
+  );
+  context.ellipse(
+    centerX + headRadiusX * 1.03,
+    headCenterY,
+    headRadiusX * 0.13,
+    headRadiusY * 0.25,
+    0,
+    0,
+    Math.PI * 2
+  );
+  context.fill();
+  context.stroke();
+
+  context.beginPath();
+  context.ellipse(centerX, headCenterY, headRadiusX, headRadiusY, 0, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+
+  context.beginPath();
+  context.moveTo(centerX - headRadiusX * 0.34, headCenterY + headRadiusY * 0.9);
+  context.lineTo(centerX - headRadiusX * 0.34, height * 0.86);
+  context.moveTo(centerX + headRadiusX * 0.34, headCenterY + headRadiusY * 0.9);
+  context.lineTo(centerX + headRadiusX * 0.34, height * 0.86);
+  context.stroke();
+
+  context.restore();
+}
+
+function redrawNoExpressionPreview(application) {
+  const canvasElement = application.element?.querySelector?.(
+    '.expression-choice[data-expression-index="-1"] .expression-choice-preview'
+  );
+  drawNeutralHeadPreview(canvasElement);
+}
+
+function scheduleNoExpressionPreview(application) {
+  for (const timer of application._portraitNoExpressionPreviewTimers ?? []) window.clearTimeout(timer);
+  application._portraitNoExpressionPreviewTimers = NO_EXPRESSION_REDRAW_DELAYS.map(delay => (
+    window.setTimeout(() => {
+      if (!application.element?.isConnected) return;
+      redrawNoExpressionPreview(application);
+    }, delay)
+  ));
 }
 
 function applyExpressionSearch(application) {
@@ -162,6 +257,8 @@ function configureFixedExpressionPreviews(application) {
   const root = application.element;
   if (!root) return;
 
+  applyDefaultPickerSize(application);
+
   const picker = root.querySelector(".expression-picker-content");
   const grid = root.querySelector(".expression-choice-grid");
   if (!picker || !grid) return;
@@ -203,6 +300,7 @@ function configureFixedExpressionPreviews(application) {
     label.style.setProperty("font-size", "14px", "important");
   }
 
+  redrawNoExpressionPreview(application);
   applyExpressionSearch(application);
 
   if (application._portraitLargePreviewObservedRoot !== root) {
@@ -224,11 +322,13 @@ function scheduleFixedExpressionPreviews(application) {
       window.requestAnimationFrame(() => configureFixedExpressionPreviews(application));
     });
   });
+  scheduleNoExpressionPreview(application);
 }
 
 /**
- * Apply fixed-size expression previews, selected-state styling, and live name
- * filtering after the picker has rebuilt its cards.
+ * Apply fixed-size expression previews, selected-state styling, live name
+ * filtering, a larger initial window, and a neutral no-expression preview after
+ * the picker has rebuilt its cards.
  */
 export function installLargeExpressionPreviews(PortraitExpressionPicker) {
   if (PortraitExpressionPicker.prototype.portraitLargePreviewsInstalled) return;
@@ -250,9 +350,12 @@ export function installLargeExpressionPreviews(PortraitExpressionPicker) {
   const originalClose = PortraitExpressionPicker.prototype.close;
   PortraitExpressionPicker.prototype.close = async function(...args) {
     window.cancelAnimationFrame(this._portraitLargePreviewFrame);
+    for (const timer of this._portraitNoExpressionPreviewTimers ?? []) window.clearTimeout(timer);
+    this._portraitNoExpressionPreviewTimers = [];
     this._portraitLargePreviewObserver?.disconnect?.();
     this._portraitLargePreviewObserver = null;
     this._portraitLargePreviewObservedRoot = null;
+    this._portraitDefaultPickerSizeApplied = false;
     return originalClose.apply(this, args);
   };
 }
