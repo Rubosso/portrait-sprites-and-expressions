@@ -1,0 +1,288 @@
+/* Legacy HTML launcher styles retained for compatibility. */
+.portrait-sprite-context-menu .window-content {
+  background: rgba(18, 18, 22, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  padding: 5px;
+}
+
+.sprite-context-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sprite-context-actions button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: #f3f4f6;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  min-height: 34px;
+  padding: 7px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.sprite-context-actions button:hover,
+.sprite-context-actions button:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+.sprite-context-actions i {
+  color: #fbbf24;
+  text-align: center;
+  width: 18px;
+}
+
+/* Visual expression picker */
+#portrait-expression-picker,
+.portrait-expression-picker {
+  max-height: calc(100vh - 64px) !important;
+  overflow: hidden !important;
+}
+
+#portrait-expression-picker .window-content,
+.portrait-expression-picker .window-content,
+#portrait-expression-picker [data-application-part="content"],
+.portrait-expression-picker [data-application-part="content"] {
+  box-sizing: border-box;
+  display: flex !important;
+  flex: 1 1 0;
+  flex-direction: column;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 12px;
+}
+
+.expression-picker-content {
+  display: grid !important;
+  flex: 1 1 auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0;
+  overflow: hidden !important;
+  width: 100%;
+}
+
+.expression-picker-hint {
+  margin: 0 0 10px;
+}
+
+.expression-choice-grid {
+  align-content: start;
+  display: grid !important;
+  gap: 10px;
+  grid-auto-rows: max-content;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)) !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0;
+  overflow-x: hidden !important;
+  overflow-y: scroll !important;
+  overscroll-behavior: contain;
+  padding: 2px 10px 12px 2px;
+  scrollbar-gutter: stable;
+  width: 100%;
+}
+
+.expression-choice {
+  align-items: start;
+  background: rgba(10, 12, 18, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #f8fafc;
+  cursor: pointer;
+  display: grid !important;
+  gap: 6px;
+  grid-template-rows: minmax(88px, 1fr) auto;
+  justify-items: center;
+  min-height: 132px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 7px;
+  text-align: center !important;
+  width: 100%;
+}
+
+.expression-choice:hover,
+.expression-choice:focus-visible {
+  background: rgba(51, 65, 85, 0.78);
+  border-color: rgba(255, 255, 255, 0.32);
+  outline: none;
+}
+
+.expression-choice.is-active {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.4);
+}
+
+.expression-choice-preview {
+  align-self: center;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 6px;
+  display: block;
+  height: auto !important;
+  image-rendering: pixelated;
+  justify-self: center;
+  max-height: 128px;
+  max-width: 128px;
+  object-fit: contain;
+  width: min(100%, 128px) !important;
+}
+
+.expression-choice-label {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+  color: #f8fafc;
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  justify-self: stretch;
+  line-height: 1.2;
+  overflow: hidden;
+  padding: 6px 2px 2px;
+  text-align: center !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* Creator and editor: every tab has one forced vertical scroller. */
+#portrait-sprite-creator,
+.portrait-sprite-creator {
+  max-height: calc(100vh - 64px) !important;
+  overflow: hidden !important;
+}
+
+#portrait-sprite-creator .window-content,
+.portrait-sprite-creator .window-content,
+#portrait-sprite-creator [data-application-part="content"],
+.portrait-sprite-creator [data-application-part="content"] {
+  box-sizing: border-box;
+  display: flex !important;
+  flex: 1 1 0;
+  flex-direction: column;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.portrait-sprite-creator .sprite-creator-form {
+  display: grid !important;
+  flex: 1 1 auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0;
+  overflow: hidden !important;
+  width: 100%;
+}
+
+.portrait-sprite-creator .creator-tabs-top {
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+}
+
+.portrait-sprite-creator .creator-tab-content {
+  height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0;
+  overflow: hidden !important;
+  position: relative;
+}
+
+.portrait-sprite-creator .creator-tab-panel {
+  box-sizing: border-box;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0;
+  overflow: hidden !important;
+}
+
+.portrait-sprite-creator .creator-tab-panel.active {
+  display: block;
+  overflow-x: hidden !important;
+  overflow-y: scroll !important;
+  overscroll-behavior: contain;
+  padding-right: 10px;
+  scrollbar-gutter: stable;
+}
+
+.portrait-sprite-creator .creator-footer {
+  align-items: center;
+  background: var(--color-bg-option, rgba(0, 0, 0, 0.22));
+  border-top: 1px solid var(--color-border-light-primary);
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  margin-top: 8px;
+  min-height: 48px;
+  padding: 8px 2px 0;
+  position: relative;
+  z-index: 2;
+}
+
+.portrait-sprite-creator .expression-section {
+  border-bottom: 0;
+  box-sizing: border-box;
+  min-height: max-content;
+  padding-bottom: 16px;
+}
+
+.portrait-sprite-creator .expression-name-grid {
+  align-content: start;
+  max-height: none;
+  overflow: visible;
+  padding: 2px 4px 20px 2px;
+}
+
+.portrait-sprite-creator .final-preview-section {
+  box-sizing: border-box;
+  min-height: max-content;
+  width: 100%;
+}
+
+.portrait-sprite-creator .final-preview-layout {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  min-width: 0;
+  width: 100%;
+}
+
+.portrait-sprite-creator .final-sprite-preview-canvas {
+  display: block;
+  height: auto;
+  max-height: none;
+  max-width: none;
+  min-width: 0;
+  object-fit: contain;
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .expression-choice-grid {
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)) !important;
+  }
+
+  .portrait-sprite-creator .final-preview-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .portrait-sprite-creator .final-magnifier-panel {
+    max-width: none;
+  }
+}

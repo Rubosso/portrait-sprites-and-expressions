@@ -1,0 +1,63 @@
+/* Final Choose Expression alignment and preview sizing overrides. */
+#portrait-expression-picker .expression-choice-grid,
+.portrait-expression-picker .expression-choice-grid {
+  gap: 14px !important;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)) !important;
+  justify-items: stretch !important;
+}
+
+#portrait-expression-picker .expression-choice,
+.portrait-expression-picker .expression-choice {
+  align-items: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  min-height: 206px !important;
+  min-width: 0 !important;
+  padding: 10px !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+
+#portrait-expression-picker .expression-choice-preview,
+.portrait-expression-picker .expression-choice-preview {
+  align-self: center !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  max-height: 168px !important;
+  max-width: 100% !important;
+  width: min(100%, 168px) !important;
+}
+
+#portrait-expression-picker .expression-choice-label,
+.portrait-expression-picker .expression-choice-label {
+  align-self: stretch !important;
+  display: block !important;
+  font-size: 13px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+
+@media (max-width: 620px) {
+  #portrait-expression-picker .expression-choice-grid,
+  .portrait-expression-picker .expression-choice-grid {
+    gap: 10px !important;
+    grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)) !important;
+  }
+
+  #portrait-expression-picker .expression-choice,
+  .portrait-expression-picker .expression-choice {
+    min-height: 174px !important;
+  }
+
+  #portrait-expression-picker .expression-choice-preview,
+  .portrait-expression-picker .expression-choice-preview {
+    max-height: 140px !important;
+    width: min(100%, 140px) !important;
+  }
+}
