@@ -1,9 +1,9 @@
 const PREVIEW_SIZE = 220;
-const CARD_MIN_WIDTH = 220;
-const CARD_MIN_HEIGHT = 258;
+const CARD_WIDTH = 248;
+const CARD_HEIGHT = 278;
 const GRID_GAP = 16;
 
-function enlargePreviewCanvas(canvasElement) {
+function fixPreviewCanvasSize(canvasElement) {
   if (!canvasElement) return;
 
   if (canvasElement.width !== PREVIEW_SIZE || canvasElement.height !== PREVIEW_SIZE) {
@@ -32,36 +32,50 @@ function enlargePreviewCanvas(canvasElement) {
     }
   }
 
+  // Keep both CSS dimensions identical and immutable. Previously the height was
+  // fixed while max-width: 100% allowed the width to shrink with the window,
+  // which visibly warped the expression preview.
+  canvasElement.style.setProperty("aspect-ratio", "1 / 1", "important");
+  canvasElement.style.setProperty("box-sizing", "border-box", "important");
   canvasElement.style.setProperty("display", "block", "important");
-  canvasElement.style.setProperty("flex", "0 0 auto", "important");
+  canvasElement.style.setProperty("flex", `0 0 ${PREVIEW_SIZE}px`, "important");
   canvasElement.style.setProperty("height", `${PREVIEW_SIZE}px`, "important");
   canvasElement.style.setProperty("margin", "0 auto", "important");
   canvasElement.style.setProperty("max-height", `${PREVIEW_SIZE}px`, "important");
-  canvasElement.style.setProperty("max-width", "100%", "important");
+  canvasElement.style.setProperty("max-width", `${PREVIEW_SIZE}px`, "important");
+  canvasElement.style.setProperty("min-height", `${PREVIEW_SIZE}px`, "important");
+  canvasElement.style.setProperty("min-width", `${PREVIEW_SIZE}px`, "important");
   canvasElement.style.setProperty("width", `${PREVIEW_SIZE}px`, "important");
 }
 
-function configureLargeExpressionPreviews(application) {
+function configureFixedExpressionPreviews(application) {
   const root = application.element;
   if (!root) return;
 
   const grid = root.querySelector(".expression-choice-grid");
   if (!grid) return;
 
+  // Cards have a fixed width. Resizing the window only changes how many complete
+  // cards fit on each row; it never scales a card or its preview.
   grid.style.setProperty("gap", `${GRID_GAP}px`, "important");
-  grid.style.setProperty(
-    "grid-template-columns",
-    `repeat(auto-fill, minmax(${CARD_MIN_WIDTH}px, 1fr))`,
-    "important"
-  );
+  grid.style.setProperty("grid-template-columns", `repeat(auto-fill, ${CARD_WIDTH}px)`, "important");
+  grid.style.setProperty("justify-content", "center", "important");
+  grid.style.setProperty("justify-items", "center", "important");
+  grid.style.setProperty("overflow-x", "auto", "important");
 
   for (const card of grid.querySelectorAll(".expression-choice")) {
-    card.style.setProperty("min-height", `${CARD_MIN_HEIGHT}px`, "important");
+    card.style.setProperty("box-sizing", "border-box", "important");
+    card.style.setProperty("height", `${CARD_HEIGHT}px`, "important");
+    card.style.setProperty("max-height", `${CARD_HEIGHT}px`, "important");
+    card.style.setProperty("max-width", `${CARD_WIDTH}px`, "important");
+    card.style.setProperty("min-height", `${CARD_HEIGHT}px`, "important");
+    card.style.setProperty("min-width", `${CARD_WIDTH}px`, "important");
     card.style.setProperty("padding", "12px", "important");
+    card.style.setProperty("width", `${CARD_WIDTH}px`, "important");
   }
 
   for (const canvasElement of grid.querySelectorAll(".expression-choice-preview")) {
-    enlargePreviewCanvas(canvasElement);
+    fixPreviewCanvasSize(canvasElement);
   }
 
   for (const label of grid.querySelectorAll(".expression-choice-label")) {
@@ -72,27 +86,27 @@ function configureLargeExpressionPreviews(application) {
     application._portraitLargePreviewObserver?.disconnect?.();
     application._portraitLargePreviewObservedRoot = root;
     application._portraitLargePreviewObserver = new ResizeObserver(() => {
-      configureLargeExpressionPreviews(application);
+      configureFixedExpressionPreviews(application);
     });
     application._portraitLargePreviewObserver.observe(root);
   }
 }
 
-function scheduleLargeExpressionPreviews(application) {
+function scheduleFixedExpressionPreviews(application) {
   window.cancelAnimationFrame(application._portraitLargePreviewFrame);
   application._portraitLargePreviewFrame = window.requestAnimationFrame(() => {
-    configureLargeExpressionPreviews(application);
+    configureFixedExpressionPreviews(application);
     window.requestAnimationFrame(() => {
-      configureLargeExpressionPreviews(application);
-      window.requestAnimationFrame(() => configureLargeExpressionPreviews(application));
+      configureFixedExpressionPreviews(application);
+      window.requestAnimationFrame(() => configureFixedExpressionPreviews(application));
     });
   });
 }
 
 /**
- * Apply an unmistakably larger preview size after the picker has rebuilt its
- * cards. This runs after the alignment and scrolling patches so earlier layout
- * code cannot restore the old 128px canvases or 112px columns.
+ * Apply fixed-size expression previews after the picker has rebuilt its cards.
+ * The preview remains a 220px square at every window size; only the number of
+ * grid columns changes.
  */
 export function installLargeExpressionPreviews(PortraitExpressionPicker) {
   if (PortraitExpressionPicker.prototype.portraitLargePreviewsInstalled) return;
@@ -107,7 +121,7 @@ export function installLargeExpressionPreviews(PortraitExpressionPicker) {
   const originalOnRender = PortraitExpressionPicker.prototype._onRender;
   PortraitExpressionPicker.prototype._onRender = function(...args) {
     const result = originalOnRender.apply(this, args);
-    scheduleLargeExpressionPreviews(this);
+    scheduleFixedExpressionPreviews(this);
     return result;
   };
 
