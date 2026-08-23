@@ -24,23 +24,28 @@
 }
 
 .portrait-sprite-library .sprite-library-grid {
+  align-content: start;
   display: grid;
   flex: 1 1 auto;
   gap: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 250px));
+  justify-content: start;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 2px 6px 8px 2px;
 }
 
 .portrait-sprite-library .sprite-library-card {
   align-items: stretch;
-  border: 1px solid var(--color-border-light-primary);
-  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
   min-width: 0;
+  overflow: hidden;
   padding: 10px;
 }
 
@@ -48,11 +53,20 @@
   display: none !important;
 }
 
+.portrait-sprite-library .sprite-library-preview-wrap {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  display: flex;
+  justify-content: center;
+  min-height: 246px;
+  overflow: hidden;
+}
+
 .portrait-sprite-library .sprite-library-preview {
-  align-self: center;
-  background: rgba(0, 0, 0, 0.12);
+  background: transparent;
   border: 0;
-  border-radius: 6px;
   display: block;
   height: 240px;
   image-rendering: pixelated;
@@ -85,9 +99,28 @@
   white-space: nowrap;
 }
 
-.portrait-sprite-library .sprite-library-card button {
+.portrait-sprite-library .sprite-library-card-actions {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.portrait-sprite-library .sprite-library-card-actions button {
   margin: 0;
-  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.portrait-sprite-library .sprite-library-delete {
+  background: rgba(127, 29, 29, 0.2);
+  border-color: rgba(248, 113, 113, 0.42);
+  color: #fecaca;
+}
+
+.portrait-sprite-library .sprite-library-delete:hover,
+.portrait-sprite-library .sprite-library-delete:focus {
+  background: rgba(153, 27, 27, 0.42);
+  border-color: rgba(252, 165, 165, 0.75);
 }
 
 .portrait-sprite-library .sprite-library-empty {
