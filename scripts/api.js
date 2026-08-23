@@ -25,6 +25,15 @@ function normalizeSpriteConfig(config) {
   };
 }
 
+function canManagePortraitSprites() {
+  return Boolean(game.user?.isGM);
+}
+
+function denyMutation() {
+  ui.notifications?.warn?.("Only a GM can modify portrait sprites.");
+  return null;
+}
+
 export function createPortraitSpritesApi() {
   return {
     /**
@@ -33,6 +42,7 @@ export function createPortraitSpritesApi() {
      * @returns {Promise<Object|null>} The created sprite data.
      */
     async addSprite(config) {
+      if (!canManagePortraitSprites()) return denyMutation();
       if (!canvas.scene) {
         ui.notifications.error("No active scene");
         return null;
@@ -42,7 +52,8 @@ export function createPortraitSpritesApi() {
       const spriteData = normalizeSpriteConfig(config);
 
       sprites.push(spriteData);
-      await setSceneSprites(sprites);
+      const saved = await setSceneSprites(sprites);
+      if (!saved) return null;
 
       if (canvas.portraitSprites) {
         await canvas.portraitSprites.createSprite(spriteData);
@@ -56,10 +67,12 @@ export function createPortraitSpritesApi() {
      * @param {string} id - Sprite ID.
      */
     async removeSprite(id) {
+      if (!canManagePortraitSprites()) return denyMutation();
       if (!canvas.scene) return;
 
       const filtered = getSceneSprites().filter(sprite => sprite.id !== id);
-      await setSceneSprites(filtered);
+      const saved = await setSceneSprites(filtered);
+      if (!saved) return null;
 
       if (canvas.portraitSprites) {
         canvas.portraitSprites.removeSprite(id);
@@ -80,6 +93,7 @@ export function createPortraitSpritesApi() {
      * @param {Object} updates - Updates to apply.
      */
     async updateSprite(id, updates) {
+      if (!canManagePortraitSprites()) return denyMutation();
       if (!canvas.scene) return;
 
       const sprites = getSceneSprites();
@@ -87,7 +101,8 @@ export function createPortraitSpritesApi() {
       if (index < 0) return;
 
       sprites[index] = foundry.utils.mergeObject(sprites[index], updates);
-      await setSceneSprites(sprites);
+      const saved = await setSceneSprites(sprites);
+      if (!saved) return null;
 
       if (canvas.portraitSprites) {
         await canvas.portraitSprites.updateSprite(id, updates);
