@@ -86,8 +86,8 @@
       },
       "ImageDimensions": "Original image: {width} × {height}px",
       "ImageDimensionsUnknown": "Original image dimensions unavailable until a spritesheet is loaded.",
-      "FinalPreviewHint": "Cycles through only the configured expression count once per second using the current body, head grid, and head offset settings.",
-      "MagnifierHint": "Move over the final preview to inspect pixels; use the mouse wheel to adjust zoom."
+      "FinalPreviewHint": "Alternates once per second between No Expression and a random configured expression so alignment changes are easy to compare.",
+      "MagnifierHint": "Move over the final preview to inspect pixels; use the mouse wheel to adjust zoom. Head Offset controls below this magnifier update the preview live."
     },
     "DefaultExpression": "Default Expression",
     "Tools": {
