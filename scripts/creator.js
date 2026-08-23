@@ -3,6 +3,10 @@ import { TEMPLATES } from "./constants.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const FilePicker = foundry.applications.apps.FilePicker?.implementation ?? globalThis.FilePicker;
 
+const COMMON_BODY_SECTION_HEIGHT = 768;
+const COMMON_EXPRESSION_SIZE = 256;
+const ALPHA_THRESHOLD = 4;
+
 export class PortraitSpriteCreator extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
@@ -39,10 +43,12 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const expressionCount = this.#getExpressionCount();
+    this.formData.expressionCount = expressionCount;
     return {
       ...context,
       ...this.formData,
       expressionCount,
+      expressionCapacity: this.#getExpressionCapacity(),
       expressionNames: this.#getExpressionNames(expressionCount),
       expressionPreviews: this.#getExpressionPreviews(expressionCount),
       previewLayoutClass: this.#getPreviewLayoutClass(),
@@ -58,15 +64,21 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       if (!name) return;
       const parsedValue = type === "number" ? Number(value) : value;
       foundry.utils.setProperty(this.formData, name, parsedValue);
+
       if (name === "spritesheet") {
         await this.#loadImageMetadata(value, { configure: true });
       }
+
       if (name.startsWith("expressionNames")) {
         const index = Number(name.split(".").pop());
-        if (!Number.isNaN(index)) {
-          this.formData.expressionNames[index] = value;
-        }
+        if (!Number.isNaN(index)) this.formData.expressionNames[index] = value;
       }
+
+      if (name === "headGrid.columns" || name === "headGrid.rows" || name === "expressionCount") {
+        this.formData.expressionCount = this.#getExpressionCount();
+        this.finalPreviewIndex %= Math.max(1, this.formData.expressionCount);
+      }
+
       this.render(false);
     }));
 
@@ -103,6 +115,14 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     this.#activatePreviewDragging(this.element);
   }
 
+  async close(options = {}) {
+    if (this.finalPreviewInterval) {
+      clearInterval(this.finalPreviewInterval);
+      this.finalPreviewInterval = null;
+    }
+    return super.close(options);
+  }
+
   #activateTab(html, tab) {
     html.querySelectorAll(".creator-tab").forEach(element => element.classList.toggle("active", false));
     html.querySelector(`.creator-tab[data-tab='${tab}']`)?.classList.toggle("active", true);
@@ -135,9 +155,7 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       y: centre.y
     });
 
-    if (spriteData) {
-      ui.notifications.info(game.i18n.localize("PORTRAIT_SPRITES.Creator.Messages.Created"));
-    }
+    if (spriteData) ui.notifications.info(game.i18n.localize("PORTRAIT_SPRITES.Creator.Messages.Created"));
   }
 
   #getCanvasViewCentre() {
@@ -153,16 +171,16 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     return {
       spritesheet: "",
       bodyFrame: {
-        x: 371,
-        y: 150,
-        width: 303,
-        height: 619
+        x: 0,
+        y: 0,
+        width: 1024,
+        height: COMMON_BODY_SECTION_HEIGHT
       },
       headGrid: {
         startX: 0,
-        startY: 768,
-        cellWidth: 256,
-        cellHeight: 256,
+        startY: COMMON_BODY_SECTION_HEIGHT,
+        cellWidth: COMMON_EXPRESSION_SIZE,
+        cellHeight: COMMON_EXPRESSION_SIZE,
         columns: 4,
         rows: 7
       },
@@ -170,6 +188,7 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
         x: 13,
         y: 0
       },
+      expressionCount: 28,
       expressionNames: [],
       imageWidth: 0,
       imageHeight: 0,
@@ -211,14 +230,15 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
   #autoConfigureFrames(image) {
     const imageWidth = image.naturalWidth || image.width;
     const imageHeight = image.naturalHeight || image.height;
-    const knownConfiguration = this.#getKnownConfiguration(imageWidth, imageHeight);
-    if (knownConfiguration) {
-      this.formData.bodyFrame = knownConfiguration.bodyFrame;
+
+    const common = this.#getCommonAtlasConfiguration(image, imageWidth, imageHeight);
+    if (common) {
+      this.formData.bodyFrame = common.bodyFrame;
       this.formData.headGrid = {
         ...this.formData.headGrid,
-        ...knownConfiguration.headGrid
+        ...common.headGrid
       };
-      this.formData.headOffset = knownConfiguration.headOffset;
+      this.formData.expressionCount = common.expressionCount;
       return;
     }
 
@@ -229,11 +249,14 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
         ...this.formData.headGrid,
         ...measured.headGrid
       };
+      this.formData.expressionCount = measured.expressionCount ?? (
+        measured.headGrid.columns * measured.headGrid.rows
+      );
       return;
     }
 
-    const columns = Math.max(1, this.formData.headGrid.columns || 4);
-    const rows = Math.max(1, this.formData.headGrid.rows || 4);
+    const columns = Math.max(1, Number(this.formData.headGrid.columns) || 4);
+    const rows = Math.max(1, Number(this.formData.headGrid.rows) || 4);
     const tallLayout = imageHeight >= imageWidth;
 
     if (tallLayout) {
@@ -254,6 +277,7 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
         columns,
         rows
       };
+      this.formData.expressionCount = columns * rows;
       return;
     }
 
@@ -274,31 +298,136 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       columns,
       rows
     };
+    this.formData.expressionCount = columns * rows;
   }
 
-  #getKnownConfiguration(imageWidth, imageHeight) {
-    if (imageWidth !== 1024 || imageHeight < 1792) return null;
+  #getCommonAtlasConfiguration(image, imageWidth, imageHeight) {
+    if (imageWidth < COMMON_EXPRESSION_SIZE || imageHeight < COMMON_BODY_SECTION_HEIGHT + COMMON_EXPRESSION_SIZE) {
+      return null;
+    }
+    if (imageWidth % COMMON_EXPRESSION_SIZE !== 0) return null;
 
-    return {
-      bodyFrame: {
-        x: 371,
-        y: 150,
-        width: 303,
-        height: 619
-      },
-      headGrid: {
-        startX: 0,
-        startY: 768,
-        cellWidth: 256,
-        cellHeight: 256,
-        columns: 4,
-        rows: 7
-      },
-      headOffset: {
-        x: 13,
-        y: 0
+    const columns = Math.floor(imageWidth / COMMON_EXPRESSION_SIZE);
+    const rows = Math.floor((imageHeight - COMMON_BODY_SECTION_HEIGHT) / COMMON_EXPRESSION_SIZE);
+    if (columns < 1 || rows < 1) return null;
+
+    const canvasElement = document.createElement("canvas");
+    canvasElement.width = imageWidth;
+    canvasElement.height = imageHeight;
+    const context = canvasElement.getContext("2d", { willReadFrequently: true });
+    if (!context) return null;
+
+    try {
+      context.drawImage(image, 0, 0);
+      const imageData = context.getImageData(0, 0, imageWidth, imageHeight);
+      const bodyBounds = this.#findAlphaBounds(
+        imageData.data,
+        imageWidth,
+        0,
+        0,
+        imageWidth,
+        Math.min(COMMON_BODY_SECTION_HEIGHT, imageHeight)
+      );
+
+      let lastFilledExpression = -1;
+      const capacity = columns * rows;
+      for (let index = 0; index < capacity; index += 1) {
+        const column = index % columns;
+        const row = Math.floor(index / columns);
+        const x = column * COMMON_EXPRESSION_SIZE;
+        const y = COMMON_BODY_SECTION_HEIGHT + row * COMMON_EXPRESSION_SIZE;
+        if (this.#cellHasVisiblePixels(
+          imageData.data,
+          imageWidth,
+          x,
+          y,
+          COMMON_EXPRESSION_SIZE,
+          COMMON_EXPRESSION_SIZE
+        )) {
+          lastFilledExpression = index;
+        }
       }
+
+      return {
+        bodyFrame: bodyBounds ?? {
+          x: 0,
+          y: 0,
+          width: imageWidth,
+          height: Math.min(COMMON_BODY_SECTION_HEIGHT, imageHeight)
+        },
+        headGrid: {
+          startX: 0,
+          startY: COMMON_BODY_SECTION_HEIGHT,
+          cellWidth: COMMON_EXPRESSION_SIZE,
+          cellHeight: COMMON_EXPRESSION_SIZE,
+          columns,
+          rows
+        },
+        expressionCount: Math.max(1, lastFilledExpression + 1)
+      };
+    } catch (error) {
+      console.warn("Portrait Sprites | Could not inspect atlas transparency", error);
+      return {
+        bodyFrame: {
+          x: 0,
+          y: 0,
+          width: imageWidth,
+          height: Math.min(COMMON_BODY_SECTION_HEIGHT, imageHeight)
+        },
+        headGrid: {
+          startX: 0,
+          startY: COMMON_BODY_SECTION_HEIGHT,
+          cellWidth: COMMON_EXPRESSION_SIZE,
+          cellHeight: COMMON_EXPRESSION_SIZE,
+          columns,
+          rows
+        },
+        expressionCount: columns * rows
+      };
+    }
+  }
+
+  #findAlphaBounds(data, imageWidth, startX, startY, width, height) {
+    let minX = startX + width;
+    let minY = startY + height;
+    let maxX = -1;
+    let maxY = -1;
+
+    const endX = Math.min(imageWidth, startX + width);
+    const imageHeight = Math.floor(data.length / 4 / imageWidth);
+    const endY = Math.min(imageHeight, startY + height);
+
+    for (let y = Math.max(0, startY); y < endY; y += 1) {
+      for (let x = Math.max(0, startX); x < endX; x += 1) {
+        const alpha = data[(y * imageWidth + x) * 4 + 3];
+        if (alpha <= ALPHA_THRESHOLD) continue;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+
+    if (maxX < minX || maxY < minY) return null;
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX + 1,
+      height: maxY - minY + 1
     };
+  }
+
+  #cellHasVisiblePixels(data, imageWidth, startX, startY, width, height) {
+    const imageHeight = Math.floor(data.length / 4 / imageWidth);
+    const endX = Math.min(imageWidth, startX + width);
+    const endY = Math.min(imageHeight, startY + height);
+
+    for (let y = startY; y < endY; y += 1) {
+      for (let x = startX; x < endX; x += 1) {
+        if (data[(y * imageWidth + x) * 4 + 3] > ALPHA_THRESHOLD) return true;
+      }
+    }
+    return false;
   }
 
   #measureSpritesheet(image, imageWidth, imageHeight) {
@@ -311,20 +440,10 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     context.drawImage(image, 0, 0);
     const { data } = context.getImageData(0, 0, imageWidth, imageHeight);
     const rowCounts = Array(imageHeight).fill(0);
-    const columnCounts = Array(imageWidth).fill(0);
 
     for (let y = 0; y < imageHeight; y += 1) {
       for (let x = 0; x < imageWidth; x += 1) {
-        const index = (y * imageWidth + x) * 4;
-        const alpha = data[index + 3];
-        const red = data[index];
-        const green = data[index + 1];
-        const blue = data[index + 2];
-        const isVisible = alpha > 12 && (red > 12 || green > 12 || blue > 12);
-        if (isVisible) {
-          rowCounts[y] += 1;
-          columnCounts[x] += 1;
-        }
+        if (data[(y * imageWidth + x) * 4 + 3] > ALPHA_THRESHOLD) rowCounts[y] += 1;
       }
     }
 
@@ -339,27 +458,32 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
 
     for (let y = gridStartY; y <= gridEndY; y += 1) {
       for (let x = 0; x < imageWidth; x += 1) {
-        const index = (y * imageWidth + x) * 4;
-        const alpha = data[index + 3];
-        const red = data[index];
-        const green = data[index + 1];
-        const blue = data[index + 2];
-        if (alpha > 12 && (red > 12 || green > 12 || blue > 12)) {
-          gridColumnCounts[x] += 1;
-        }
+        if (data[(y * imageWidth + x) * 4 + 3] > ALPHA_THRESHOLD) gridColumnCounts[x] += 1;
       }
     }
 
-    const columnBands = this.#findContentBands(gridColumnCounts, Math.max(6, (gridEndY - gridStartY + 1) * 0.03), 8);
-    const columns = Math.max(1, columnBands.length || this.formData.headGrid.columns || 4);
-    const rows = Math.max(1, expressionBands.length || this.formData.headGrid.rows || 4);
+    const columnBands = this.#findContentBands(
+      gridColumnCounts,
+      Math.max(6, (gridEndY - gridStartY + 1) * 0.03),
+      8
+    );
+    const columns = Math.max(1, columnBands.length || Number(this.formData.headGrid.columns) || 4);
+    const rows = Math.max(1, expressionBands.length || Number(this.formData.headGrid.rows) || 4);
     const gridStartX = columnBands.length ? columnBands[0].start : 0;
     const gridEndX = columnBands.length ? columnBands[columnBands.length - 1].end : imageWidth - 1;
     const gridWidth = Math.max(1, gridEndX - gridStartX + 1);
     const gridHeight = Math.max(1, gridEndY - gridStartY + 1);
+    const bodyBounds = this.#findAlphaBounds(
+      data,
+      imageWidth,
+      0,
+      bodyBand.start,
+      imageWidth,
+      Math.max(1, gridStartY - bodyBand.start)
+    );
 
     return {
-      bodyFrame: {
+      bodyFrame: bodyBounds ?? {
         x: 0,
         y: Math.max(0, bodyBand.start),
         width: imageWidth,
@@ -372,7 +496,8 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
         cellHeight: Math.max(1, Math.ceil(gridHeight / rows)),
         columns,
         rows
-      }
+      },
+      expressionCount: columns * rows
     };
   }
 
@@ -395,21 +520,25 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       }
     });
 
-    if (start !== null && lastContent !== null) {
-      bands.push({ start, end: lastContent });
-    }
+    if (start !== null && lastContent !== null) bands.push({ start, end: lastContent });
     return bands.filter(band => band.end - band.start > 4);
   }
 
+  #getExpressionCapacity() {
+    const columns = Math.max(1, Number(this.formData.headGrid.columns) || 1);
+    const rows = Math.max(1, Number(this.formData.headGrid.rows) || 1);
+    return columns * rows;
+  }
 
   #getExpressionCount() {
-    return Math.max(0, this.formData.headGrid.columns * this.formData.headGrid.rows);
+    const capacity = this.#getExpressionCapacity();
+    const requested = Number(this.formData.expressionCount);
+    if (!Number.isFinite(requested)) return capacity;
+    return Math.min(capacity, Math.max(1, Math.floor(requested)));
   }
 
   #getExpressionNames(count) {
-    if (!Array.isArray(this.formData.expressionNames)) {
-      this.formData.expressionNames = [];
-    }
+    if (!Array.isArray(this.formData.expressionNames)) this.formData.expressionNames = [];
     if (this.formData.expressionNames.length < count) {
       for (let i = this.formData.expressionNames.length; i < count; i += 1) {
         this.formData.expressionNames[i] = game.i18n.format("PORTRAIT_SPRITES.Creator.DefaultExpressionName", {
@@ -429,8 +558,16 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
   }
 
   #getPreviewLayoutClass() {
-    const width = Math.max(1, this.formData.bodyFrame.width + this.formData.bodyFrame.x, this.formData.headGrid.startX + (this.formData.headGrid.columns * this.formData.headGrid.cellWidth));
-    const height = Math.max(1, this.formData.bodyFrame.height + this.formData.bodyFrame.y, this.formData.headGrid.startY + (this.formData.headGrid.rows * this.formData.headGrid.cellHeight));
+    const width = Math.max(
+      1,
+      this.formData.bodyFrame.width + this.formData.bodyFrame.x,
+      this.formData.headGrid.startX + this.formData.headGrid.columns * this.formData.headGrid.cellWidth
+    );
+    const height = Math.max(
+      1,
+      this.formData.bodyFrame.height + this.formData.bodyFrame.y,
+      this.formData.headGrid.startY + this.formData.headGrid.rows * this.formData.headGrid.cellHeight
+    );
     return width > height * 1.25 ? "preview-layout-wide" : "preview-layout-tall";
   }
 
@@ -438,10 +575,11 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     const frames = [];
     const count = this.#getExpressionCount();
     const names = this.#getExpressionNames(count);
+    const columns = Math.max(1, Number(this.formData.headGrid.columns) || 1);
 
     for (let i = 0; i < count; i += 1) {
-      const column = i % this.formData.headGrid.columns;
-      const row = Math.floor(i / this.formData.headGrid.columns);
+      const column = i % columns;
+      const row = Math.floor(i / columns);
       frames.push({
         x: this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth,
         y: this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight,
@@ -463,7 +601,6 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     const fallbackHeight = Math.max(1, this.formData.bodyFrame.height + this.formData.bodyFrame.y);
     canvasElement.width = fallbackWidth;
     canvasElement.height = fallbackHeight;
-
     context.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
     if (!this.formData.spritesheet) {
@@ -501,10 +638,11 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       html.querySelectorAll(".expression-preview-canvas").forEach(canvasElement => {
         const index = Number(canvasElement.dataset.expressionIndex);
         const context = canvasElement.getContext("2d");
-        if (!context || Number.isNaN(index)) return;
+        if (!context || Number.isNaN(index) || index >= this.#getExpressionCount()) return;
 
-        const column = index % this.formData.headGrid.columns;
-        const row = Math.floor(index / this.formData.headGrid.columns);
+        const columns = Math.max(1, Number(this.formData.headGrid.columns) || 1);
+        const column = index % columns;
+        const row = Math.floor(index / columns);
         const sourceX = this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth;
         const sourceY = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
 
@@ -524,7 +662,6 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     };
     image.src = this.formData.spritesheet;
   }
-
 
   #renderFinalPreview(html) {
     const canvasElement = html.querySelector(".final-sprite-preview-canvas");
@@ -547,7 +684,6 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       draw();
     }, 1000);
   }
-
 
   #activateFinalPreviewMagnifier(canvasElement, magnifierCanvas) {
     if (!canvasElement || !magnifierCanvas) return;
@@ -616,7 +752,6 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     context.fillText(`${zoom}x`, 18, 23);
   }
 
-
   #drawFinalPreview(canvasElement) {
     const context = canvasElement.getContext("2d");
     if (!context) return;
@@ -644,10 +779,12 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     );
 
     const frameIndex = this.finalPreviewIndex % Math.max(1, this.#getExpressionCount());
-    const column = frameIndex % this.formData.headGrid.columns;
-    const row = Math.floor(frameIndex / this.formData.headGrid.columns);
+    const columns = Math.max(1, Number(this.formData.headGrid.columns) || 1);
+    const column = frameIndex % columns;
+    const row = Math.floor(frameIndex / columns);
     const sourceX = this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth;
     const sourceY = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
+
     context.drawImage(
       this.previewImage,
       sourceX,
@@ -660,7 +797,6 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       this.formData.headGrid.cellHeight
     );
   }
-
 
   #activatePreviewDragging(html) {
     const canvasElement = html.querySelector(".sprite-preview-canvas");
@@ -719,7 +855,10 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
 
   #hitTestRect(point, rect, target) {
     const tolerance = 12;
-    const inside = point.x >= rect.x - tolerance && point.x <= rect.x + rect.width + tolerance && point.y >= rect.y - tolerance && point.y <= rect.y + rect.height + tolerance;
+    const inside = point.x >= rect.x - tolerance
+      && point.x <= rect.x + rect.width + tolerance
+      && point.y >= rect.y - tolerance
+      && point.y <= rect.y + rect.height + tolerance;
     if (!inside) return null;
 
     const nearLeft = Math.abs(point.x - rect.x) <= tolerance;
@@ -733,6 +872,7 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
   #applyPreviewDrag(point) {
     const dx = Math.round(point.x - this.dragState.startPoint.x);
     const dy = Math.round(point.y - this.dragState.startPoint.y);
+
     if (this.dragState.target === "body") {
       this.formData.bodyFrame = this.#resizeOrMoveRect(this.dragState.bodyFrame, dx, dy, this.dragState);
       return;
@@ -792,7 +932,8 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
       "headGrid.cellWidth": this.formData.headGrid.cellWidth,
       "headGrid.cellHeight": this.formData.headGrid.cellHeight,
       "headOffset.x": this.formData.headOffset.x,
-      "headOffset.y": this.formData.headOffset.y
+      "headOffset.y": this.formData.headOffset.y,
+      expressionCount: this.#getExpressionCount()
     };
     Object.entries(values).forEach(([name, value]) => {
       const input = html.querySelector(`[name='${name}']`);
@@ -827,13 +968,18 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
     };
   }
 
-
   #drawOverlays(context) {
     context.save();
 
     context.strokeStyle = "rgba(248, 113, 113, 0.98)";
     context.lineWidth = 5;
-    this.#strokeInsetRect(context, this.formData.bodyFrame.x, this.formData.bodyFrame.y, this.formData.bodyFrame.width, this.formData.bodyFrame.height);
+    this.#strokeInsetRect(
+      context,
+      this.formData.bodyFrame.x,
+      this.formData.bodyFrame.y,
+      this.formData.bodyFrame.width,
+      this.formData.bodyFrame.height
+    );
 
     const headRect = this.#getHeadPlacementRect();
     context.strokeStyle = "rgba(250, 204, 21, 0.98)";
@@ -842,9 +988,10 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
 
     context.lineWidth = 4;
     const count = this.#getExpressionCount();
+    const columns = Math.max(1, Number(this.formData.headGrid.columns) || 1);
     for (let i = 0; i < count; i += 1) {
-      const column = i % this.formData.headGrid.columns;
-      const row = Math.floor(i / this.formData.headGrid.columns);
+      const column = i % columns;
+      const row = Math.floor(i / columns);
       const x = this.formData.headGrid.startX + column * this.formData.headGrid.cellWidth;
       const y = this.formData.headGrid.startY + row * this.formData.headGrid.cellHeight;
       context.strokeStyle = "rgba(34, 211, 238, 0.98)";
@@ -853,14 +1000,24 @@ export class PortraitSpriteCreator extends HandlebarsApplicationMixin(Applicatio
 
     context.strokeStyle = "rgba(244, 114, 182, 0.98)";
     context.lineWidth = 7;
-    this.#strokeInsetRect(context, this.formData.headGrid.startX, this.formData.headGrid.startY, this.formData.headGrid.columns * this.formData.headGrid.cellWidth, this.formData.headGrid.rows * this.formData.headGrid.cellHeight);
+    this.#strokeInsetRect(
+      context,
+      this.formData.headGrid.startX,
+      this.formData.headGrid.startY,
+      this.formData.headGrid.columns * this.formData.headGrid.cellWidth,
+      this.formData.headGrid.rows * this.formData.headGrid.cellHeight
+    );
 
     context.restore();
   }
 
   #strokeInsetRect(context, x, y, width, height) {
     const inset = context.lineWidth / 2;
-    context.strokeRect(x + inset, y + inset, Math.max(1, width - context.lineWidth), Math.max(1, height - context.lineWidth));
+    context.strokeRect(
+      x + inset,
+      y + inset,
+      Math.max(1, width - context.lineWidth),
+      Math.max(1, height - context.lineWidth)
+    );
   }
-
 }
