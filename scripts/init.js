@@ -17,6 +17,7 @@ import {
   PortraitSpriteEditor
 } from "./sprite-menus.js";
 import { installContextMenuFix } from "./context-menu-fix.js";
+import { installPlayerVisibility } from "./player-visibility.js";
 import { installScrollableApplicationLayouts } from "./scroll-layout.js";
 import { installExpressionPickerAlignment } from "./runtime-fixes.js";
 import { installLargeExpressionPreviews } from "./expression-preview-size.js";
@@ -38,6 +39,7 @@ installContextMenuFix(
   PortraitSpriteEditor,
   PortraitExpressionPicker
 );
+installPlayerVisibility(PortraitSpritesLayer, PortraitSprite);
 installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPicker);
 installExpressionPickerAlignment(PortraitExpressionPicker);
 installLargeExpressionPreviews(PortraitExpressionPicker);
