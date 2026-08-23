@@ -13,12 +13,15 @@
   <div class="sprite-library-grid">
     {{#each entries}}
       <article class="sprite-library-card" data-search-text="{{searchText}}">
-        <canvas
-          class="sprite-library-preview"
-          data-library-index="{{index}}"
-          width="180"
-          height="240"
-        ></canvas>
+        <div class="sprite-library-preview-wrap">
+          <canvas
+            class="sprite-library-preview"
+            data-library-index="{{index}}"
+            width="180"
+            height="240"
+          ></canvas>
+        </div>
+
         <div class="sprite-library-card-copy">
           <strong class="sprite-library-name">{{name}}</strong>
           <span class="sprite-library-meta">
@@ -26,14 +29,27 @@
           </span>
           <span class="sprite-library-path" title="{{spritesheet}}">{{spritesheet}}</span>
         </div>
-        <button
-          type="button"
-          data-action="add-library-sprite"
-          data-library-index="{{index}}"
-        >
-          <i class="fas fa-plus"></i>
-          {{localize "PORTRAIT_SPRITES.Library.AddToScene"}}
-        </button>
+
+        <div class="sprite-library-card-actions">
+          <button
+            type="button"
+            class="sprite-library-add"
+            data-action="add-library-sprite"
+            data-library-index="{{index}}"
+          >
+            <i class="fas fa-plus"></i>
+            {{localize "PORTRAIT_SPRITES.Library.AddToScene"}}
+          </button>
+          <button
+            type="button"
+            class="sprite-library-delete"
+            data-action="delete-library-sprite"
+            data-library-index="{{index}}"
+          >
+            <i class="fas fa-trash"></i>
+            {{localize "PORTRAIT_SPRITES.Library.DeleteSaved"}}
+          </button>
+        </div>
       </article>
     {{else}}
       <p class="sprite-library-empty">{{localize "PORTRAIT_SPRITES.Library.Empty"}}</p>
