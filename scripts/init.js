@@ -19,6 +19,7 @@ import { installContextMenuFix } from "./context-menu-fix.js";
 import { installScrollableApplicationLayouts } from "./scroll-layout.js";
 import { installExpressionPickerAlignment } from "./runtime-fixes.js";
 import { installLargeExpressionPreviews } from "./expression-preview-size.js";
+import { installLiveSceneSync } from "./live-sync.js";
 
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator);
@@ -33,6 +34,7 @@ installContextMenuFix(
 installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPicker);
 installExpressionPickerAlignment(PortraitExpressionPicker);
 installLargeExpressionPreviews(PortraitExpressionPicker);
+installLiveSceneSync();
 
 Hooks.once("init", () => {
   log("Initializing");
