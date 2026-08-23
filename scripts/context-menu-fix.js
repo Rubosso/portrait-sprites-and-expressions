@@ -151,10 +151,6 @@ function createCanvasMenu(sprite, PortraitSpriteEditor, PortraitExpressionPicker
       label: game.i18n.localize("PORTRAIT_SPRITES.ContextMenu.Delete"),
       activate: async () => {
         sprite.closeSpriteActionMenu();
-        const confirmed = window.confirm(
-          game.i18n.localize("PORTRAIT_SPRITES.ContextMenu.DeleteConfirm")
-        );
-        if (!confirmed) return;
         await window.PortraitSprites?.removeSprite?.(sprite.id);
       }
     }
