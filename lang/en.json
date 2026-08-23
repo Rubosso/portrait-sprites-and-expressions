@@ -26,8 +26,7 @@
       "Reset": "Reset",
       "HidePlayers": "Hide from Players",
       "ShowPlayers": "Show to Players",
-      "Delete": "Delete from Scene",
-      "DeleteConfirm": "Delete this portrait sprite from the current Scene? Its reusable library entry will be kept."
+      "Delete": "Delete from Scene"
     },
     "ExpressionPicker": {
       "Title": "Choose Expression",
