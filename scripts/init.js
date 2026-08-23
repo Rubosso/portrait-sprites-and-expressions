@@ -21,10 +21,15 @@ import { installScrollableApplicationLayouts } from "./scroll-layout.js";
 import { installExpressionPickerAlignment } from "./runtime-fixes.js";
 import { installLargeExpressionPreviews } from "./expression-preview-size.js";
 import { installLiveSceneSync } from "./live-sync.js";
+import {
+  PortraitSpriteLibrary,
+  SPRITE_LIBRARY_SETTING,
+  syncSpriteLibraryFromScenes
+} from "./sprite-library.js";
 
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installFaceReplacement(PortraitSprite);
-installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator);
+installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator, PortraitSpriteLibrary);
 installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
 installSpriteMenus(PortraitSprite);
 installContextMenuFix(
@@ -48,6 +53,14 @@ Hooks.once("init", () => {
     default: "1.0.0",
     type: String
   });
+
+  game.settings.register(MODULE_ID, SPRITE_LIBRARY_SETTING, {
+    name: "Portrait Sprite Library",
+    scope: "world",
+    config: false,
+    default: { entries: [] },
+    type: Object
+  });
 });
 
 Hooks.once("setup", () => {
@@ -59,6 +72,10 @@ Hooks.once("setup", () => {
     layerClass: PortraitSpritesLayer,
     group: "interface"
   };
+});
+
+Hooks.once("ready", () => {
+  if (game.user?.isGM) syncSpriteLibraryFromScenes();
 });
 
 Hooks.on("canvasReady", canvasInstance => {
