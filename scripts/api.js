@@ -4,6 +4,7 @@
 
 import { DEFAULT_BODY_FRAME, DEFAULT_HEAD_FRAME, DEFAULT_HEAD_OFFSET, MODULE_ID } from "./constants.js";
 import { getSceneSprites, setSceneSprites } from "./scene-flags.js";
+import { rememberSpriteTemplate } from "./sprite-library.js";
 
 function getDefaultHeadFrame() {
   return {
@@ -15,6 +16,8 @@ function getDefaultHeadFrame() {
 function normalizeSpriteConfig(config) {
   return {
     id: foundry.utils.randomID(),
+    libraryId: config.libraryId || null,
+    name: config.name || "",
     spritesheet: config.spritesheet,
     bodyFrame: config.bodyFrame || { ...DEFAULT_BODY_FRAME },
     headFrames: config.headFrames || [getDefaultHeadFrame()],
@@ -34,6 +37,11 @@ function denyMutation() {
   return null;
 }
 
+function changesReusableConfiguration(updates) {
+  return ["libraryId", "name", "spritesheet", "bodyFrame", "headFrames", "headOffset"]
+    .some(key => updates?.[key] !== undefined);
+}
+
 export function createPortraitSpritesApi() {
   return {
     /**
@@ -50,6 +58,11 @@ export function createPortraitSpritesApi() {
 
       const sprites = getSceneSprites();
       const spriteData = normalizeSpriteConfig(config);
+      const libraryEntry = await rememberSpriteTemplate(spriteData);
+      if (libraryEntry) {
+        spriteData.libraryId = libraryEntry.id;
+        spriteData.name = libraryEntry.name;
+      }
 
       sprites.push(spriteData);
       const saved = await setSceneSprites(sprites);
@@ -101,12 +114,21 @@ export function createPortraitSpritesApi() {
       if (index < 0) return;
 
       sprites[index] = foundry.utils.mergeObject(sprites[index], updates);
+      if (changesReusableConfiguration(updates)) {
+        const libraryEntry = await rememberSpriteTemplate(sprites[index]);
+        if (libraryEntry) {
+          sprites[index].libraryId = libraryEntry.id;
+          sprites[index].name = libraryEntry.name;
+        }
+      }
+
       const saved = await setSceneSprites(sprites);
       if (!saved) return null;
 
       if (canvas.portraitSprites) {
         await canvas.portraitSprites.updateSprite(id, updates);
       }
+      return sprites[index];
     }
   };
 }
