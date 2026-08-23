@@ -31,6 +31,15 @@
       "SearchPlaceholder": "Search expressions by name…",
       "ClearSearch": "Clear expression search"
     },
+    "Library": {
+      "Title": "Portrait Sprite Library",
+      "Tool": "Add Existing Portrait Sprite",
+      "SearchPlaceholder": "Search saved sprites…",
+      "AddToScene": "Add to Scene",
+      "ExpressionCount": "{count} expressions",
+      "Empty": "No reusable portrait sprites have been created yet.",
+      "Added": "Added {name} to the scene."
+    },
     "Creator": {
       "Title": "Portrait Sprite Creator",
       "EditTitle": "Edit Portrait Sprite",
