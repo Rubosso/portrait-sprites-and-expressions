@@ -38,6 +38,8 @@
       "Title": "Portrait Sprite Library",
       "Tool": "Add Existing Portrait Sprite",
       "SearchPlaceholder": "Search saved sprites…",
+      "NameLabel": "Sprite name",
+      "NamePlaceholder": "Name this sprite…",
       "AddToScene": "Add to Scene",
       "DeleteSaved": "Delete",
       "DeleteConfirm": "Delete {name} from the portrait sprite library? Portraits already placed on Scenes will remain.",
