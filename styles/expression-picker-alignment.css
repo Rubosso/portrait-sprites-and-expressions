@@ -43,6 +43,14 @@
   width: 100% !important;
 }
 
+/* Keep the magnified Final-tab preview visible while its panel scrolls. */
+.portrait-sprite-creator .final-magnifier-panel {
+  align-self: flex-start;
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+}
+
 @media (max-width: 620px) {
   #portrait-expression-picker .expression-choice-grid,
   .portrait-expression-picker .expression-choice-grid {
