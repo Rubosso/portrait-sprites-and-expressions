@@ -62,7 +62,7 @@ Hooks.once("init", () => {
     name: "Portrait Sprite Library",
     scope: "world",
     config: false,
-    default: { entries: [] },
+    default: { entries: [], ignoredSignatures: [] },
     type: Object
   });
 });
