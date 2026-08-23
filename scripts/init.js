@@ -8,6 +8,7 @@ import { log } from "./constants.js";
 import { PortraitSprite, PortraitSpriteHUD, PortraitSpritesLayer } from "./layer.js";
 import { PortraitSpriteCreator } from "./creator.js";
 import { installNoExpressionSupport } from "./no-expression.js";
+import { installFaceReplacement } from "./face-replacement.js";
 import { installV13LayerControls } from "./v13-layer-controls.js";
 import { installTransformSupport } from "./transform.js";
 import {
@@ -22,6 +23,7 @@ import { installLargeExpressionPreviews } from "./expression-preview-size.js";
 import { installLiveSceneSync } from "./live-sync.js";
 
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
+installFaceReplacement(PortraitSprite);
 installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator);
 installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
 installSpriteMenus(PortraitSprite);
