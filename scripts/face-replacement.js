@@ -4,9 +4,11 @@
  *
  * The cutout rectangle is derived entirely from the existing head configuration:
  * headOffset provides the local body position and the active head frame provides
- * the cutout width and height. The cutout matches that rectangle exactly so the
- * replacement expression connects cleanly to the surrounding body artwork.
+ * the cutout width and height. The body cutout is inset by one pixel on each edge,
+ * allowing the unchanged expression sprite to overlap the surrounding body by one
+ * pixel and prevent subpixel sampling seams while panning or scaling the canvas.
  */
+const EXPRESSION_OVERLAP = 1;
 
 function getActiveHeadFrame(sprite) {
   const index = Number(sprite.currentExpression);
@@ -31,10 +33,12 @@ function getCutoutRectangle(sprite, frame) {
   const frameHeight = Math.max(0, Number(frame.height) || 0);
   if (!frameWidth || !frameHeight) return null;
 
-  const left = clamp(offsetX, 0, bodyWidth);
-  const top = clamp(offsetY, 0, bodyHeight);
-  const right = clamp(offsetX + frameWidth, 0, bodyWidth);
-  const bottom = clamp(offsetY + frameHeight, 0, bodyHeight);
+  // Keep a one-pixel ring of the original body beneath the expression. The
+  // expression itself is not moved or stretched, so atlas alignment stays exact.
+  const left = clamp(offsetX + EXPRESSION_OVERLAP, 0, bodyWidth);
+  const top = clamp(offsetY + EXPRESSION_OVERLAP, 0, bodyHeight);
+  const right = clamp(offsetX + frameWidth - EXPRESSION_OVERLAP, 0, bodyWidth);
+  const bottom = clamp(offsetY + frameHeight - EXPRESSION_OVERLAP, 0, bodyHeight);
 
   if (right <= left || bottom <= top) return null;
   return new PIXI.Rectangle(left, top, right - left, bottom - top);
