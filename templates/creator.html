@@ -65,11 +65,13 @@
               </div>
               <div class="grid-row">
                 <label>{{localize "PORTRAIT_SPRITES.Creator.HeadGridLayout"}}</label>
-                <div class="grid-inputs grid-layout-inputs small-coordinate-inputs">
+                <div class="grid-inputs expression-layout-inputs small-coordinate-inputs">
                   <label class="coordinate-field"><span>Cols</span><input name="headGrid.columns" type="number" value="{{headGrid.columns}}" min="1" aria-label="Head grid columns" /></label>
                   <label class="coordinate-field"><span>Rows</span><input name="headGrid.rows" type="number" value="{{headGrid.rows}}" min="1" aria-label="Head grid rows" /></label>
+                  <label class="coordinate-field"><span>{{localize "PORTRAIT_SPRITES.Creator.ExpressionCountShort"}}</span><input name="expressionCount" type="number" value="{{expressionCount}}" min="1" max="{{expressionCapacity}}" aria-label="{{localize 'PORTRAIT_SPRITES.Creator.ExpressionCount'}}" /></label>
                 </div>
               </div>
+              <p class="helper-text">{{localize "PORTRAIT_SPRITES.Creator.ExpressionCountHint" capacity=expressionCapacity}}</p>
               <div class="grid-row">
                 <label>{{localize "PORTRAIT_SPRITES.Creator.HeadOffset"}}</label>
                 <div class="grid-inputs grid-layout-inputs small-coordinate-inputs">
