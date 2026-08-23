@@ -78,25 +78,23 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
   min-width: 0;
 }
 
-.portrait-sprite-library .sprite-library-name {
+.portrait-sprite-library .sprite-library-name-input {
+  box-sizing: border-box;
   font-size: 14px;
+  font-weight: 700;
   line-height: 1.2;
+  margin: 0;
+  min-width: 0;
+  width: 100%;
 }
 
-.portrait-sprite-library .sprite-library-meta,
-.portrait-sprite-library .sprite-library-path {
+.portrait-sprite-library .sprite-library-meta {
   font-size: 11px;
   opacity: 0.8;
-}
-
-.portrait-sprite-library .sprite-library-path {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .portrait-sprite-library .sprite-library-card-actions {
