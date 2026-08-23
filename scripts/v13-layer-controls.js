@@ -15,28 +15,35 @@ export function installV13LayerControls(PortraitSpritesLayer, PortraitSprite, Po
 
   const interactionLayerPrototype = Object.getPrototypeOf(PortraitSpritesLayer.prototype);
   const originalDraw = PortraitSpritesLayer.prototype._draw;
+  const originalActivate = PortraitSpritesLayer.prototype.activate;
+  const canManagePortraitSprites = () => Boolean(game.user?.isGM);
 
   /**
    * Foundry v13 discovers controls from InteractionLayer subclasses through
    * static prepareSceneControls(). The control's onChange activates the layer;
    * InteractionLayer.activate() then deactivates every other interaction layer.
+   * Players may see rendered portrait sprites, but only GMs may see or use the
+   * portrait controls.
    */
   PortraitSpritesLayer.prepareSceneControls = function() {
+    const canManage = canManagePortraitSprites();
     return {
       name: "portraitSprites",
       order: 90,
       title: "PORTRAIT_SPRITES.Layer",
       icon: "fas fa-user-circle",
       activeTool: "select",
+      visible: canManage,
       onChange: (_event, active) => {
-        if (active) canvas.portraitSprites?.activate?.({ tool: "select" });
+        if (active && canManagePortraitSprites()) canvas.portraitSprites?.activate?.({ tool: "select" });
       },
       tools: {
         select: {
           name: "select",
           order: 1,
           title: "CONTROLS.CommonSelect",
-          icon: "fas fa-mouse-pointer"
+          icon: "fas fa-mouse-pointer",
+          visible: canManage
         },
         portraitSpriteCreator: {
           name: "portraitSpriteCreator",
@@ -44,13 +51,29 @@ export function installV13LayerControls(PortraitSpritesLayer, PortraitSprite, Po
           title: "PORTRAIT_SPRITES.Creator.Tool",
           icon: "fas fa-plus-circle",
           button: true,
+          visible: canManage,
           onChange: (_event, active) => {
-            if (active === false) return;
+            if (active === false || !canManagePortraitSprites()) return;
             new PortraitSpriteCreator().render(true);
           }
         }
       }
     };
+  };
+
+  /**
+   * Never allow a non-GM client to activate this interaction layer, even if a
+   * module or console call attempts to do so directly.
+   */
+  PortraitSpritesLayer.prototype.activate = function(...args) {
+    if (!canManagePortraitSprites()) {
+      this.interactionActive = false;
+      this.eventMode = "none";
+      this.interactiveChildren = false;
+      for (const sprite of this.sprites?.values?.() ?? []) sprite.setInteractive(false);
+      return this;
+    }
+    return originalActivate.call(this, ...args);
   };
 
   /**
@@ -62,21 +85,28 @@ export function installV13LayerControls(PortraitSpritesLayer, PortraitSprite, Po
     await interactionLayerPrototype?._draw?.call(this, options);
     const result = await originalDraw.call(this, options);
 
+    const canManage = canManagePortraitSprites();
+    const enabled = canManage && Boolean(this.active);
     this.hitArea = canvas.dimensions.rect;
     this.zIndex = this.getZIndex?.() ?? this.zIndex;
-    this.eventMode = this.active ? "static" : "passive";
-    this.interactiveChildren = Boolean(this.active);
-    this.setInteractionActive(Boolean(this.active));
+    this.eventMode = canManage ? (this.active ? "static" : "passive") : "none";
+    this.interactiveChildren = enabled;
+    this.setInteractionActive(enabled);
     return result ?? this;
   };
 
   /**
    * Do not assign eventMode or the legacy PIXI interactive property here.
    * InteractionLayer.activate/deactivate exclusively own the layer's event mode.
+   * Non-GM clients are always forced non-interactive.
    */
   PortraitSpritesLayer.prototype.setInteractionActive = function(active) {
-    const enabled = Boolean(active);
+    const enabled = canManagePortraitSprites() && Boolean(active);
     this.interactionActive = enabled;
+    if (!canManagePortraitSprites()) {
+      this.eventMode = "none";
+      this.interactiveChildren = false;
+    }
     for (const sprite of this.sprites?.values?.() ?? []) {
       sprite.setInteractive(enabled);
     }
@@ -87,7 +117,7 @@ export function installV13LayerControls(PortraitSpritesLayer, PortraitSprite, Po
    * interactive setter, which can rewrite PIXI eventMode after it is assigned.
    */
   PortraitSprite.prototype.setInteractive = function(active) {
-    const enabled = Boolean(active);
+    const enabled = canManagePortraitSprites() && Boolean(active);
     this.eventMode = enabled ? "static" : "none";
     this.cursor = enabled ? "pointer" : null;
     this.buttonMode = enabled;
