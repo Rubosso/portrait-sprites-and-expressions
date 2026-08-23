@@ -7,14 +7,14 @@ import { createPortraitSpritesApi, MODULE_ID } from "./api.js";
 import { log } from "./constants.js";
 import { PortraitSprite, PortraitSpriteHUD, PortraitSpritesLayer } from "./layer.js";
 import { PortraitSpriteCreator } from "./creator.js";
+import { CountAwarePortraitSpriteEditor } from "./count-aware-editor.js";
 import { installNoExpressionSupport } from "./no-expression.js";
 import { installFaceReplacement } from "./face-replacement.js";
 import { installV13LayerControls } from "./v13-layer-controls.js";
 import { installTransformSupport } from "./transform.js";
 import {
   installSpriteMenus,
-  PortraitExpressionPicker,
-  PortraitSpriteEditor
+  PortraitExpressionPicker
 } from "./sprite-menus.js";
 import { installContextMenuFix } from "./context-menu-fix.js";
 import { installPlayerVisibility } from "./player-visibility.js";
@@ -36,7 +36,7 @@ installSpriteMenus(PortraitSprite);
 installContextMenuFix(
   PortraitSpritesLayer,
   PortraitSprite,
-  PortraitSpriteEditor,
+  CountAwarePortraitSpriteEditor,
   PortraitExpressionPicker
 );
 installPlayerVisibility(PortraitSpritesLayer, PortraitSprite);
