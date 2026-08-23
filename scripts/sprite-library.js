@@ -195,56 +195,33 @@ function drawLibraryPreview(canvasElement, image, entry) {
   );
 
   if (!frame) return;
+  const headX = offsetX + (Number(entry.headOffset?.x) || 0) * scale;
+  const headY = offsetY + (Number(entry.headOffset?.y) || 0) * scale;
 
-  // Match runtime replacement: retain a one-pixel body ring beneath the
-  // expression so previews use the same one-pixel overlap around the face.
-  const headX = Number(entry.headOffset?.x) || 0;
-  const headY = Number(entry.headOffset?.y) || 0;
-  const cutoutX = Math.max(0, headX + EXPRESSION_OVERLAP);
-  const cutoutY = Math.max(0, headY + EXPRESSION_OVERLAP);
-  const cutoutRight = Math.min(body.width, headX + frame.width - EXPRESSION_OVERLAP);
-  const cutoutBottom = Math.min(body.height, headY + frame.height - EXPRESSION_OVERLAP);
-  const cutoutWidth = Math.max(0, cutoutRight - cutoutX);
-  const cutoutHeight = Math.max(0, cutoutBottom - cutoutY);
-
+  // Match runtime face replacement while retaining a one-pixel ring of body
+  // beneath the expression to prevent visible edge seams.
+  const overlap = EXPRESSION_OVERLAP * scale;
+  const cutoutWidth = Math.max(0, frame.width * scale - overlap * 2);
+  const cutoutHeight = Math.max(0, frame.height * scale - overlap * 2);
   if (cutoutWidth > 0 && cutoutHeight > 0) {
     context.clearRect(
-      offsetX + cutoutX * scale,
-      offsetY + cutoutY * scale,
-      cutoutWidth * scale,
-      cutoutHeight * scale
+      headX + overlap,
+      headY + overlap,
+      cutoutWidth,
+      cutoutHeight
     );
   }
-
   context.drawImage(
     image,
     frame.x,
     frame.y,
     frame.width,
     frame.height,
-    offsetX + headX * scale,
-    offsetY + headY * scale,
+    headX,
+    headY,
     frame.width * scale,
     frame.height * scale
   );
-}
-
-function buildSceneConfig(entry) {
-  const centre = getCanvasViewCentre();
-  return {
-    libraryId: entry.id,
-    name: entry.name,
-    spritesheet: entry.spritesheet,
-    bodyFrame: foundry.utils.deepClone(entry.bodyFrame),
-    headFrames: foundry.utils.deepClone(entry.headFrames),
-    headOffset: foundry.utils.deepClone(entry.headOffset),
-    x: centre.x,
-    y: centre.y,
-    currentExpression: 0,
-    rotation: 0,
-    scaleX: 1,
-    scaleY: 1
-  };
 }
 
 export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -256,10 +233,7 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
   static DEFAULT_OPTIONS = {
     id: "portrait-sprite-library",
     classes: ["portrait-sprite-library"],
-    position: {
-      width: 760,
-      height: 680
-    },
+    position: { width: 900, height: 700 },
     window: {
       title: "PORTRAIT_SPRITES.Library.Title",
       frame: true,
@@ -268,9 +242,7 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
   };
 
   static PARTS = {
-    content: {
-      template: TEMPLATES.spriteLibrary
-    }
+    content: { template: TEMPLATES.spriteLibrary }
   };
 
   async _prepareContext(options) {
@@ -283,7 +255,7 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
         ...entry,
         index,
         expressionCount: entry.headFrames?.length ?? 0,
-        searchText: `${entry.name} ${entry.spritesheet}`.toLowerCase()
+        searchText: `${entry.name} ${entry.spritesheet}`.toLocaleLowerCase()
       }))
     };
   }
@@ -291,11 +263,12 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
   _onRender(context, options) {
     super._onRender(context, options);
 
-    const searchInput = this.element.querySelector("[data-action='search-library']");
-    searchInput?.addEventListener("input", event => {
-      const query = String(event.currentTarget.value || "").trim().toLowerCase();
+    const search = this.element.querySelector("[data-action='search-library']");
+    search?.addEventListener("input", event => {
+      const query = String(event.currentTarget.value || "").trim().toLocaleLowerCase();
       for (const card of this.element.querySelectorAll(".sprite-library-card")) {
-        card.hidden = query && !String(card.dataset.searchText || "").includes(query);
+        const haystack = String(card.dataset.searchText || "").toLocaleLowerCase();
+        card.hidden = Boolean(query && !haystack.includes(query));
       }
     });
 
@@ -303,32 +276,36 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
       button.addEventListener("click", async event => {
         event.preventDefault();
         if (!game.user?.isGM) return;
+
         const index = Number(event.currentTarget.dataset.libraryIndex);
         const entry = this.entries[index];
         if (!entry) return;
-        const spriteData = await window.PortraitSprites?.addSprite?.(buildSceneConfig(entry));
+
+        const centre = getCanvasViewCentre();
+        const spriteData = await PortraitSprites.addSprite({
+          libraryId: entry.id,
+          name: entry.name,
+          spritesheet: entry.spritesheet,
+          bodyFrame: foundry.utils.deepClone(entry.bodyFrame),
+          headFrames: foundry.utils.deepClone(entry.headFrames),
+          headOffset: foundry.utils.deepClone(entry.headOffset),
+          x: centre.x,
+          y: centre.y
+        });
+
         if (spriteData) {
           ui.notifications.info(game.i18n.format("PORTRAIT_SPRITES.Library.Added", { name: entry.name }));
         }
       });
     });
 
-    const previews = Array.from(this.element.querySelectorAll(".sprite-library-preview"));
-    const bySpritesheet = new Map();
-    for (const canvasElement of previews) {
+    for (const canvasElement of this.element.querySelectorAll(".sprite-library-preview")) {
       const index = Number(canvasElement.dataset.libraryIndex);
       const entry = this.entries[index];
-      if (!entry?.spritesheet) continue;
-      if (!bySpritesheet.has(entry.spritesheet)) bySpritesheet.set(entry.spritesheet, []);
-      bySpritesheet.get(entry.spritesheet).push({ canvasElement, entry });
-    }
-
-    for (const [spritesheet, targets] of bySpritesheet) {
-      loadImage(spritesheet).then(image => {
-        if (!image || !this.element?.isConnected) return;
-        for (const { canvasElement, entry } of targets) {
-          drawLibraryPreview(canvasElement, image, entry);
-        }
+      if (!entry) continue;
+      loadImage(entry.spritesheet).then(image => {
+        if (!image || !canvasElement.isConnected) return;
+        drawLibraryPreview(canvasElement, image, entry);
       });
     }
   }
