@@ -1,10 +1,17 @@
 <style>
   /* Keep the library usable even if Foundry does not reload the module stylesheet
      while developing: the critical layout lives with the application template. */
+  #portrait-sprite-library,
+  .portrait-sprite-library {
+    max-height: calc(100vh - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+
   #portrait-sprite-library .window-content,
   .portrait-sprite-library .window-content {
     display: flex !important;
     flex: 1 1 auto;
+    height: 100% !important;
     min-height: 0 !important;
     overflow: hidden !important;
   }
