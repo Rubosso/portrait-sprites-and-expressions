@@ -22,9 +22,24 @@ function inferSpriteName(spritesheet) {
     .trim() || "Portrait Sprite";
 }
 
+function normalizeSpriteName(name, spritesheet) {
+  const candidate = String(name ?? "").trim();
+  if (!candidate) return inferSpriteName(spritesheet);
+
+  // Older Scene data may have used the entire asset path as the portrait name.
+  // Treat path-like values as an unnamed sprite so cards stay compact by default.
+  const normalizedCandidate = candidate.replace(/\\/g, "/");
+  const normalizedSpritesheet = String(spritesheet ?? "").replace(/\\/g, "/");
+  if (normalizedCandidate === normalizedSpritesheet || normalizedCandidate.includes("/")) {
+    return inferSpriteName(spritesheet);
+  }
+
+  return candidate;
+}
+
 function reusableConfig(config = {}) {
   return {
-    name: String(config.name || inferSpriteName(config.spritesheet)),
+    name: normalizeSpriteName(config.name, config.spritesheet),
     spritesheet: String(config.spritesheet || ""),
     bodyFrame: foundry.utils.deepClone(config.bodyFrame ?? {}),
     headFrames: foundry.utils.deepClone(config.headFrames ?? []),
@@ -44,10 +59,14 @@ function configSignature(config) {
 
 function readLibraryState() {
   const stored = game.settings.get(MODULE_ID, SPRITE_LIBRARY_SETTING);
-  const entries = Array.isArray(stored?.entries) ? stored.entries : [];
+  const storedEntries = Array.isArray(stored?.entries) ? stored.entries : [];
   const ignoredSignatures = Array.isArray(stored?.ignoredSignatures) ? stored.ignoredSignatures : [];
+  const entries = storedEntries.map(entry => ({
+    ...foundry.utils.deepClone(entry),
+    name: normalizeSpriteName(entry.name, entry.spritesheet)
+  }));
   return {
-    entries: foundry.utils.deepClone(entries),
+    entries,
     ignoredSignatures: foundry.utils.deepClone(ignoredSignatures)
   };
 }
@@ -98,7 +117,12 @@ export async function rememberSpriteTemplate(config) {
   const existing = findMatchingEntry(entries, config);
 
   if (existing) {
+    const customName = existing.customName === true ? existing.name : null;
     Object.assign(existing, reusable);
+    if (customName) {
+      existing.name = customName;
+      existing.customName = true;
+    }
     await writeLibrary(entries, { ignoredSignatures });
     return foundry.utils.deepClone(existing);
   }
@@ -109,6 +133,24 @@ export async function rememberSpriteTemplate(config) {
   };
   entries.push(entry);
   await writeLibrary(entries, { ignoredSignatures });
+  return foundry.utils.deepClone(entry);
+}
+
+/**
+ * Give one reusable sprite a GM-defined display name. Clearing the field returns
+ * it to the short filename-derived fallback.
+ */
+export async function renameSpriteTemplate(id, name) {
+  if (!game.user?.isGM) return null;
+
+  const state = readLibraryState();
+  const entry = state.entries.find(candidate => candidate.id === id);
+  if (!entry) return null;
+
+  const requested = String(name ?? "").trim();
+  entry.name = requested || inferSpriteName(entry.spritesheet);
+  entry.customName = Boolean(requested);
+  await writeLibrary(state.entries, { ignoredSignatures: state.ignoredSignatures });
   return foundry.utils.deepClone(entry);
 }
 
@@ -154,7 +196,12 @@ export async function syncSpriteLibraryFromScenes() {
       const existing = findMatchingEntry(entries, sprite);
       if (existing) {
         const before = JSON.stringify(existing);
+        const customName = existing.customName === true ? existing.name : null;
         Object.assign(existing, reusable);
+        if (customName) {
+          existing.name = customName;
+          existing.customName = true;
+        }
         if (before !== JSON.stringify(existing)) changed = true;
         continue;
       }
@@ -315,6 +362,35 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
         const haystack = String(card.dataset.searchText || "").toLocaleLowerCase();
         card.hidden = Boolean(query && !haystack.includes(query));
       }
+    });
+
+    this.element.querySelectorAll("[data-action='rename-library-sprite']").forEach(input => {
+      const commitName = async () => {
+        if (!game.user?.isGM) return;
+
+        const index = Number(input.dataset.libraryIndex);
+        const entry = this.entries[index];
+        if (!entry) return;
+
+        const requested = String(input.value || "").trim();
+        if (requested === entry.name) return;
+
+        const renamed = await renameSpriteTemplate(entry.id, requested);
+        if (!renamed) return;
+
+        entry.name = renamed.name;
+        entry.customName = renamed.customName;
+        input.value = renamed.name;
+        const card = input.closest(".sprite-library-card");
+        if (card) card.dataset.searchText = `${renamed.name} ${renamed.spritesheet}`.toLocaleLowerCase();
+      };
+
+      input.addEventListener("change", commitName);
+      input.addEventListener("keydown", event => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        input.blur();
+      });
     });
 
     this.element.querySelectorAll("[data-action='add-library-sprite']").forEach(button => {
