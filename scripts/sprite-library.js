@@ -372,16 +372,27 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
         const entry = this.entries[index];
         if (!entry) return;
 
+        const previousName = entry.name;
         const requested = String(input.value || "").trim();
-        if (requested === entry.name) return;
+        if (requested === previousName) return;
+
+        // Update the in-memory card immediately so clicking Add right after typing
+        // uses the new name even while the world-setting write is still pending.
+        entry.name = requested || inferSpriteName(entry.spritesheet);
+        input.value = entry.name;
+        const card = input.closest(".sprite-library-card");
+        if (card) card.dataset.searchText = `${entry.name} ${entry.spritesheet}`.toLocaleLowerCase();
 
         const renamed = await renameSpriteTemplate(entry.id, requested);
-        if (!renamed) return;
+        if (!renamed) {
+          entry.name = previousName;
+          input.value = previousName;
+          return;
+        }
 
         entry.name = renamed.name;
         entry.customName = renamed.customName;
         input.value = renamed.name;
-        const card = input.closest(".sprite-library-card");
         if (card) card.dataset.searchText = `${renamed.name} ${renamed.spritesheet}`.toLocaleLowerCase();
       };
 
