@@ -1,0 +1,54 @@
+.portrait-sprite-creator .final-magnifier-panel {
+  align-self: flex-start;
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+}
+
+.portrait-sprite-creator .final-head-offset-controls {
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  width: 220px;
+}
+
+.portrait-sprite-creator .final-head-offset-title {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.portrait-sprite-creator .final-head-offset-row {
+  align-items: center;
+  display: grid;
+  gap: 5px;
+  grid-template-columns: 18px 30px minmax(0, 1fr) 30px;
+}
+
+.portrait-sprite-creator .final-head-offset-axis {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.portrait-sprite-creator .final-head-offset-input {
+  box-sizing: border-box;
+  min-width: 0;
+  text-align: center;
+  width: 100%;
+}
+
+.portrait-sprite-creator .final-head-offset-nudge {
+  align-items: center;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  line-height: 1;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+  width: 30px;
+}
