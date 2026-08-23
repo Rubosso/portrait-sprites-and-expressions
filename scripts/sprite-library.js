@@ -7,6 +7,7 @@
  * expression is deliberately excluded from library entries.
  */
 import { FLAGS, MODULE_ID, TEMPLATES } from "./constants.js";
+import { NO_EXPRESSION } from "./no-expression.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 export const SPRITE_LIBRARY_SETTING = "spriteLibrary";
@@ -421,6 +422,7 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
           bodyFrame: foundry.utils.deepClone(entry.bodyFrame),
           headFrames: foundry.utils.deepClone(entry.headFrames),
           headOffset: foundry.utils.deepClone(entry.headOffset),
+          currentExpression: NO_EXPRESSION,
           x: centre.x,
           y: centre.y
         });
