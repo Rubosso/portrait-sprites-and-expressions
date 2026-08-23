@@ -57,10 +57,7 @@ function fadePlayerVisibility(sprite) {
   }
 
   const startedAt = performance.now();
-  const fade = {
-    frame: null,
-    targetHidden: hidden
-  };
+  const fade = { frame: null, targetHidden: hidden };
   sprite._portraitVisibilityFade = fade;
 
   const step = now => {
