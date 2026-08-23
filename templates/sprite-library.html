@@ -1,0 +1,42 @@
+<section class="sprite-library-shell">
+  <div class="sprite-library-toolbar">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input
+      type="search"
+      data-action="search-library"
+      placeholder="{{localize 'PORTRAIT_SPRITES.Library.SearchPlaceholder'}}"
+      aria-label="{{localize 'PORTRAIT_SPRITES.Library.SearchPlaceholder'}}"
+      autocomplete="off"
+    />
+  </div>
+
+  <div class="sprite-library-grid">
+    {{#each entries}}
+      <article class="sprite-library-card" data-search-text="{{searchText}}">
+        <canvas
+          class="sprite-library-preview"
+          data-library-index="{{index}}"
+          width="180"
+          height="240"
+        ></canvas>
+        <div class="sprite-library-card-copy">
+          <strong class="sprite-library-name">{{name}}</strong>
+          <span class="sprite-library-meta">
+            {{localize "PORTRAIT_SPRITES.Library.ExpressionCount" count=expressionCount}}
+          </span>
+          <span class="sprite-library-path" title="{{spritesheet}}">{{spritesheet}}</span>
+        </div>
+        <button
+          type="button"
+          data-action="add-library-sprite"
+          data-library-index="{{index}}"
+        >
+          <i class="fas fa-plus"></i>
+          {{localize "PORTRAIT_SPRITES.Library.AddToScene"}}
+        </button>
+      </article>
+    {{else}}
+      <p class="sprite-library-empty">{{localize "PORTRAIT_SPRITES.Library.Empty"}}</p>
+    {{/each}}
+  </div>
+</section>
