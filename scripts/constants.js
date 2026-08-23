@@ -15,7 +15,9 @@ export const DEFAULT_HEAD_FRAME = Object.freeze({ x: 0, y: 100, width: 100, heig
 
 export const TEMPLATES = {
   creator: `modules/${MODULE_ID}/templates/creator.html`,
-  hud: `modules/${MODULE_ID}/templates/hud.html`
+  hud: `modules/${MODULE_ID}/templates/hud.html`,
+  contextMenu: `modules/${MODULE_ID}/templates/context-menu.html`,
+  expressionPicker: `modules/${MODULE_ID}/templates/expression-picker.html`
 };
 
 export const log = (...args) => console.log(`${MODULE_TITLE} |`, ...args);

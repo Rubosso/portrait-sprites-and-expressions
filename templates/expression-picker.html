@@ -1,0 +1,22 @@
+<div class="expression-picker-content">
+  <p class="expression-picker-hint">{{localize "PORTRAIT_SPRITES.ExpressionPicker.Hint"}}</p>
+  <div class="expression-choice-grid" role="listbox" aria-label="{{localize 'PORTRAIT_SPRITES.ExpressionPicker.Title'}}">
+    {{#each expressions}}
+      <div
+        class="expression-choice {{#if isActive}}is-active{{/if}}"
+        data-expression-index="{{index}}"
+        role="option"
+        tabindex="0"
+        aria-selected="{{#if isActive}}true{{else}}false{{/if}}"
+      >
+        <canvas
+          class="expression-choice-preview"
+          data-expression-index="{{index}}"
+          width="128"
+          height="128"
+        ></canvas>
+        <span class="expression-choice-label">{{label}}</span>
+      </div>
+    {{/each}}
+  </div>
+</div>
