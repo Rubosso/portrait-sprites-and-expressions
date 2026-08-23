@@ -42,15 +42,27 @@ function configSignature(config) {
   });
 }
 
-function readLibrary() {
+function readLibraryState() {
   const stored = game.settings.get(MODULE_ID, SPRITE_LIBRARY_SETTING);
   const entries = Array.isArray(stored?.entries) ? stored.entries : [];
-  return foundry.utils.deepClone(entries);
+  const ignoredSignatures = Array.isArray(stored?.ignoredSignatures) ? stored.ignoredSignatures : [];
+  return {
+    entries: foundry.utils.deepClone(entries),
+    ignoredSignatures: foundry.utils.deepClone(ignoredSignatures)
+  };
 }
 
-async function writeLibrary(entries) {
+function readLibrary() {
+  return readLibraryState().entries;
+}
+
+async function writeLibrary(entries, { ignoredSignatures } = {}) {
   if (!game.user?.isGM) return false;
-  await game.settings.set(MODULE_ID, SPRITE_LIBRARY_SETTING, { entries });
+  const current = readLibraryState();
+  await game.settings.set(MODULE_ID, SPRITE_LIBRARY_SETTING, {
+    entries,
+    ignoredSignatures: ignoredSignatures ?? current.ignoredSignatures
+  });
   return true;
 }
 
@@ -78,13 +90,16 @@ function findMatchingEntry(entries, config) {
 export async function rememberSpriteTemplate(config) {
   if (!game.user?.isGM || !config?.spritesheet) return null;
 
-  const entries = readLibrary();
+  const state = readLibraryState();
+  const entries = state.entries;
   const reusable = reusableConfig(config);
+  const signature = configSignature(config);
+  const ignoredSignatures = state.ignoredSignatures.filter(ignored => ignored !== signature);
   const existing = findMatchingEntry(entries, config);
 
   if (existing) {
     Object.assign(existing, reusable);
-    await writeLibrary(entries);
+    await writeLibrary(entries, { ignoredSignatures });
     return foundry.utils.deepClone(existing);
   }
 
@@ -93,8 +108,30 @@ export async function rememberSpriteTemplate(config) {
     ...reusable
   };
   entries.push(entry);
-  await writeLibrary(entries);
+  await writeLibrary(entries, { ignoredSignatures });
   return foundry.utils.deepClone(entry);
+}
+
+/**
+ * Remove one reusable configuration without touching any Scene instances.
+ * Its signature is remembered so the automatic Scene migration does not
+ * immediately recreate a library entry the GM deliberately deleted.
+ */
+export async function deleteSpriteTemplate(id) {
+  if (!game.user?.isGM) return null;
+
+  const state = readLibraryState();
+  const index = state.entries.findIndex(entry => entry.id === id);
+  if (index < 0) return null;
+
+  const [deleted] = state.entries.splice(index, 1);
+  const ignoredSignatures = new Set(state.ignoredSignatures);
+  ignoredSignatures.add(configSignature(deleted));
+
+  await writeLibrary(state.entries, {
+    ignoredSignatures: Array.from(ignoredSignatures)
+  });
+  return foundry.utils.deepClone(deleted);
 }
 
 /**
@@ -104,7 +141,9 @@ export async function rememberSpriteTemplate(config) {
 export async function syncSpriteLibraryFromScenes() {
   if (!game.user?.isGM) return [];
 
-  const entries = readLibrary();
+  const state = readLibraryState();
+  const entries = state.entries;
+  const ignoredSignatures = new Set(state.ignoredSignatures);
   let changed = false;
 
   for (const scene of game.scenes?.contents ?? []) {
@@ -120,6 +159,8 @@ export async function syncSpriteLibraryFromScenes() {
         continue;
       }
 
+      if (ignoredSignatures.has(configSignature(sprite))) continue;
+
       entries.push({
         id: String(sprite.libraryId || foundry.utils.randomID()),
         ...reusable
@@ -128,7 +169,11 @@ export async function syncSpriteLibraryFromScenes() {
     }
   }
 
-  if (changed) await writeLibrary(entries);
+  if (changed) {
+    await writeLibrary(entries, {
+      ignoredSignatures: Array.from(ignoredSignatures)
+    });
+  }
   return entries;
 }
 
@@ -296,6 +341,30 @@ export class PortraitSpriteLibrary extends HandlebarsApplicationMixin(Applicatio
         if (spriteData) {
           ui.notifications.info(game.i18n.format("PORTRAIT_SPRITES.Library.Added", { name: entry.name }));
         }
+      });
+    });
+
+    this.element.querySelectorAll("[data-action='delete-library-sprite']").forEach(button => {
+      button.addEventListener("click", async event => {
+        event.preventDefault();
+        if (!game.user?.isGM) return;
+
+        const index = Number(event.currentTarget.dataset.libraryIndex);
+        const entry = this.entries[index];
+        if (!entry) return;
+
+        const confirmed = window.confirm(
+          game.i18n.format("PORTRAIT_SPRITES.Library.DeleteConfirm", { name: entry.name })
+        );
+        if (!confirmed) return;
+
+        const deleted = await deleteSpriteTemplate(entry.id);
+        if (!deleted) return;
+
+        ui.notifications.info(game.i18n.format("PORTRAIT_SPRITES.Library.Deleted", {
+          name: deleted.name
+        }));
+        this.render(false);
       });
     });
 
