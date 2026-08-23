@@ -39,6 +39,9 @@
       "Tool": "Add Existing Portrait Sprite",
       "SearchPlaceholder": "Search saved sprites…",
       "AddToScene": "Add to Scene",
+      "DeleteSaved": "Delete",
+      "DeleteConfirm": "Delete {name} from the portrait sprite library? Portraits already placed on Scenes will remain.",
+      "Deleted": "Deleted {name} from the sprite library.",
       "ExpressionCount": "{count} expressions",
       "Empty": "No reusable portrait sprites have been created yet.",
       "Added": "Added {name} to the scene."
