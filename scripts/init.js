@@ -19,6 +19,7 @@ import {
 import { installContextMenuFix } from "./context-menu-fix.js";
 import { installPlayerVisibility } from "./player-visibility.js";
 import { installKeyboardDelete } from "./keyboard-delete.js";
+import { installFinalPreviewControls } from "./final-preview-controls.js";
 import { installScrollableApplicationLayouts } from "./scroll-layout.js";
 import { installExpressionPickerAlignment } from "./runtime-fixes.js";
 import { installLargeExpressionPreviews } from "./expression-preview-size.js";
@@ -42,6 +43,7 @@ installContextMenuFix(
 );
 installPlayerVisibility(PortraitSpritesLayer, PortraitSprite);
 installKeyboardDelete();
+installFinalPreviewControls(PortraitSpriteCreator);
 installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPicker);
 installExpressionPickerAlignment(PortraitExpressionPicker);
 installLargeExpressionPreviews(PortraitExpressionPicker);
