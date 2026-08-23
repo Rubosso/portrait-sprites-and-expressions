@@ -13,7 +13,7 @@
   <div class="sprite-library-grid">
     {{#each entries}}
       <article class="sprite-library-card" data-search-text="{{searchText}}">
-        <div class="sprite-library-preview-wrap">
+        <div class="sprite-library-preview-wrap" title="{{spritesheet}}">
           <canvas
             class="sprite-library-preview"
             data-library-index="{{index}}"
@@ -23,11 +23,19 @@
         </div>
 
         <div class="sprite-library-card-copy">
-          <strong class="sprite-library-name">{{name}}</strong>
+          <input
+            type="text"
+            class="sprite-library-name-input"
+            data-action="rename-library-sprite"
+            data-library-index="{{index}}"
+            value="{{name}}"
+            placeholder="{{localize 'PORTRAIT_SPRITES.Library.NamePlaceholder'}}"
+            aria-label="{{localize 'PORTRAIT_SPRITES.Library.NameLabel'}}"
+            autocomplete="off"
+          />
           <span class="sprite-library-meta">
             {{localize "PORTRAIT_SPRITES.Library.ExpressionCount" count=expressionCount}}
           </span>
-          <span class="sprite-library-path" title="{{spritesheet}}">{{spritesheet}}</span>
         </div>
 
         <div class="sprite-library-card-actions">
