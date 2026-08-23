@@ -4,10 +4,9 @@
  *
  * The cutout rectangle is derived entirely from the existing head configuration:
  * headOffset provides the local body position and the active head frame provides
- * the cutout width and height. A small padding removes antialiased remnants of
- * the original face around the expression edges.
+ * the cutout width and height. The cutout matches that rectangle exactly so the
+ * replacement expression connects cleanly to the surrounding body artwork.
  */
-const CUTOUT_PADDING = 2;
 
 function getActiveHeadFrame(sprite) {
   const index = Number(sprite.currentExpression);
@@ -32,10 +31,10 @@ function getCutoutRectangle(sprite, frame) {
   const frameHeight = Math.max(0, Number(frame.height) || 0);
   if (!frameWidth || !frameHeight) return null;
 
-  const left = clamp(Math.floor(offsetX - CUTOUT_PADDING), 0, bodyWidth);
-  const top = clamp(Math.floor(offsetY - CUTOUT_PADDING), 0, bodyHeight);
-  const right = clamp(Math.ceil(offsetX + frameWidth + CUTOUT_PADDING), 0, bodyWidth);
-  const bottom = clamp(Math.ceil(offsetY + frameHeight + CUTOUT_PADDING), 0, bodyHeight);
+  const left = clamp(offsetX, 0, bodyWidth);
+  const top = clamp(offsetY, 0, bodyHeight);
+  const right = clamp(offsetX + frameWidth, 0, bodyWidth);
+  const bottom = clamp(offsetY + frameHeight, 0, bodyHeight);
 
   if (right <= left || bottom <= top) return null;
   return new PIXI.Rectangle(left, top, right - left, bottom - top);
