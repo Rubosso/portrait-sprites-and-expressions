@@ -1,5 +1,7 @@
 const EXPRESSION_OVERLAP = 1;
 const PREVIEW_INTERVAL_MS = 1000;
+const IMAGE_READY_POLL_MS = 50;
+const IMAGE_READY_MAX_POLLS = 200;
 
 function getExpressionCount(application) {
   const columns = Math.max(1, Number(application.formData?.headGrid?.columns) || 1);
@@ -242,6 +244,38 @@ function takeOverPreviewTimer(application) {
   }, PREVIEW_INTERVAL_MS);
 }
 
+function retakePreviewAfterImageLoad(application, previousImage) {
+  if (!application.formData?.spritesheet) return;
+  if (application.finalPreviewTakeoverTimeout) {
+    clearTimeout(application.finalPreviewTakeoverTimeout);
+    application.finalPreviewTakeoverTimeout = null;
+  }
+
+  let polls = 0;
+  const check = () => {
+    if (!application.element?.isConnected) return;
+    polls += 1;
+
+    // creator.js replaces previewImage inside its image.onload callback and then
+    // restarts its original sequential timer. Reclaim the timer after that
+    // callback has completed so the comparison preview remains authoritative.
+    if (application.previewImage && application.previewImage !== previousImage) {
+      installOffsetControls(application);
+      takeOverPreviewTimer(application);
+      application.finalPreviewTakeoverTimeout = null;
+      return;
+    }
+
+    if (polls >= IMAGE_READY_MAX_POLLS) {
+      application.finalPreviewTakeoverTimeout = null;
+      return;
+    }
+    application.finalPreviewTakeoverTimeout = setTimeout(check, IMAGE_READY_POLL_MS);
+  };
+
+  application.finalPreviewTakeoverTimeout = setTimeout(check, IMAGE_READY_POLL_MS);
+}
+
 /**
  * Replace the creator's sequential final-preview cycle with a comparison view:
  * original body -> random expression -> original body -> random expression.
@@ -258,10 +292,22 @@ export function installFinalPreviewControls(PortraitSpriteCreator) {
   });
 
   const originalOnRender = PortraitSpriteCreator.prototype._onRender;
+  const originalClose = PortraitSpriteCreator.prototype.close;
+
   PortraitSpriteCreator.prototype._onRender = function(...args) {
+    const previousImage = this.previewImage;
     const result = originalOnRender.apply(this, args);
     installOffsetControls(this);
     takeOverPreviewTimer(this);
+    retakePreviewAfterImageLoad(this, previousImage);
     return result;
+  };
+
+  PortraitSpriteCreator.prototype.close = async function(...args) {
+    if (this.finalPreviewTakeoverTimeout) {
+      clearTimeout(this.finalPreviewTakeoverTimeout);
+      this.finalPreviewTakeoverTimeout = null;
+    }
+    return originalClose.apply(this, args);
   };
 }
