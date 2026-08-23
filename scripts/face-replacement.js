@@ -109,9 +109,7 @@ function rebuildBodyReplacement(sprite) {
   const bodyWidth = sprite.bodyFrame.width;
   const bodyHeight = sprite.bodyFrame.height;
   const slices = [
-    // Everything above the replacement area.
     new PIXI.Rectangle(0, 0, bodyWidth, cutout.y),
-    // Left and right strips beside the replacement area.
     new PIXI.Rectangle(0, cutout.y, cutout.x, cutout.height),
     new PIXI.Rectangle(
       cutout.x + cutout.width,
@@ -119,7 +117,6 @@ function rebuildBodyReplacement(sprite) {
       bodyWidth - (cutout.x + cutout.width),
       cutout.height
     ),
-    // Everything below the replacement area.
     new PIXI.Rectangle(
       0,
       cutout.y + cutout.height,
@@ -137,10 +134,6 @@ function rebuildBodyReplacement(sprite) {
   sprite.bodySprite.visible = false;
 }
 
-/**
- * Install face replacement rendering onto PortraitSprite.
- * @param {typeof import("./layer.js").PortraitSprite} PortraitSprite
- */
 export function installFaceReplacement(PortraitSprite) {
   if (PortraitSprite.prototype.faceReplacementInstalled) return;
 
