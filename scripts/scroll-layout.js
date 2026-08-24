@@ -21,10 +21,6 @@ function clampApplicationHeight(application, preferredHeight) {
   if (Math.abs(currentHeight - targetHeight) > 1) {
     application.setPosition?.({ height: targetHeight });
   }
-
-  // Do not write display/max-height/overflow onto the ApplicationV2 root.
-  // Foundry animates that outer frame when a window closes. Overriding those
-  // properties makes the framework wait for a transition which cannot be seen.
 }
 
 function installWheelScrolling(element) {
@@ -55,34 +51,27 @@ function scheduleLayout(application, configure) {
   });
 }
 
-function observeLayout(application, configure) {
-  const root = application.element;
-  if (!root || application._portraitClosing || application._portraitObservedRoot === root) return;
-
-  application._portraitLayoutObserver?.disconnect?.();
-  application._portraitObservedRoot = root;
-  application._portraitLayoutObserver = new ResizeObserver(() => {
-    if (!application._portraitClosing) scheduleLayout(application, configure);
-  });
-  application._portraitLayoutObserver.observe(root);
-}
-
 function stopLayoutManagement(application) {
   application._portraitClosing = true;
   window.cancelAnimationFrame(application._portraitLayoutFrame);
   application._portraitLayoutFrame = null;
+
+  // Disconnect observers created by older builds or other portrait layout passes.
+  // The current layout no longer observes the ApplicationV2 root at all, because
+  // doing so lets a resize callback race Foundry's native close animation.
   application._portraitLayoutObserver?.disconnect?.();
   application._portraitLayoutObserver = null;
   application._portraitObservedRoot = null;
 
-  // Remove root styles left by older versions of the module before Foundry starts
-  // its close transition. Inner scrolling styles can remain; they do not own the
-  // outer frame animation.
+  // Remove root styles left by older versions before Foundry begins its native
+  // close transition. We intentionally keep the inline width/height managed by
+  // ApplicationV2 itself so Foundry has the correct starting box to animate.
   const root = application.element;
   if (root) {
     root.style.removeProperty('display');
     root.style.removeProperty('flex-direction');
     root.style.removeProperty('max-height');
+    root.style.removeProperty('min-height');
     root.style.removeProperty('overflow');
   }
 }
@@ -251,7 +240,7 @@ function renderHeadOnlyPreviews(application) {
 }
 
 function installCloseCleanup(ApplicationClass) {
-  if (ApplicationClass.prototype.portraitCloseCleanupInstalled) return;
+  if (Object.prototype.hasOwnProperty.call(ApplicationClass.prototype, 'portraitCloseCleanupInstalled')) return;
 
   Object.defineProperty(ApplicationClass.prototype, 'portraitCloseCleanupInstalled', {
     value: true,
@@ -260,6 +249,17 @@ function installCloseCleanup(ApplicationClass) {
     writable: false
   });
 
+  // Mark the application as closing before ApplicationV2 starts changing its box.
+  // _preClose is late enough for a ResizeObserver/rAF to race the first transition
+  // frame, so cleanup at the public close() entry point instead.
+  const originalClose = ApplicationClass.prototype.close;
+  ApplicationClass.prototype.close = async function(...args) {
+    stopLayoutManagement(this);
+    return originalClose.apply(this, args);
+  };
+
+  // Keep the lifecycle hook as a fallback for close paths which might bypass the
+  // public method in future Foundry updates.
   const originalPreClose = ApplicationClass.prototype._preClose;
   ApplicationClass.prototype._preClose = async function(...args) {
     stopLayoutManagement(this);
@@ -284,7 +284,6 @@ export function installScrollableApplicationLayouts(PortraitSpriteCreator, Portr
       this._portraitClosing = false;
       const result = originalCreatorRender.apply(this, args);
       scheduleLayout(this, configureCreatorLayout);
-      observeLayout(this, configureCreatorLayout);
       this.element.querySelector('.creator-tabs')?.addEventListener('click', () => {
         scheduleLayout(this, configureCreatorLayout);
       }, { capture: true });
@@ -305,7 +304,6 @@ export function installScrollableApplicationLayouts(PortraitSpriteCreator, Portr
       this._portraitClosing = false;
       const result = originalPickerRender.apply(this, args);
       scheduleLayout(this, configurePickerLayout);
-      observeLayout(this, configurePickerLayout);
       renderHeadOnlyPreviews(this);
 
       this.element.querySelectorAll('.expression-choice[data-expression-index]').forEach(card => {
