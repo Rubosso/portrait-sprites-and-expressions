@@ -6,6 +6,10 @@ import { DEFAULT_BODY_FRAME, DEFAULT_HEAD_FRAME, DEFAULT_HEAD_OFFSET, MODULE_ID 
 import { getSceneSprites, setSceneSprites } from "./scene-flags.js";
 import { rememberSpriteTemplate } from "./sprite-library.js";
 
+const SPAWN_VIEW_FRACTION = 0.8;
+const MIN_SCALE = 0.01;
+const MAX_SCALE = 5;
+
 function getDefaultHeadFrame() {
   return {
     ...DEFAULT_HEAD_FRAME,
@@ -13,7 +17,97 @@ function getDefaultHeadFrame() {
   };
 }
 
+function finiteNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function getSpriteContentBounds(config) {
+  const body = config.bodyFrame || DEFAULT_BODY_FRAME;
+  const bodyWidth = Math.max(1, finiteNumber(body.width, DEFAULT_BODY_FRAME.width));
+  const bodyHeight = Math.max(1, finiteNumber(body.height, DEFAULT_BODY_FRAME.height));
+  const offsetX = finiteNumber(config.headOffset?.x, DEFAULT_HEAD_OFFSET.x);
+  const offsetY = finiteNumber(config.headOffset?.y, DEFAULT_HEAD_OFFSET.y);
+
+  let left = 0;
+  let top = 0;
+  let right = bodyWidth;
+  let bottom = bodyHeight;
+
+  for (const frame of config.headFrames || []) {
+    const width = Math.max(0, finiteNumber(frame?.width));
+    const height = Math.max(0, finiteNumber(frame?.height));
+    if (!width || !height) continue;
+    left = Math.min(left, offsetX);
+    top = Math.min(top, offsetY);
+    right = Math.max(right, offsetX + width);
+    bottom = Math.max(bottom, offsetY + height);
+  }
+
+  return {
+    x: left,
+    y: top,
+    width: Math.max(1, right - left),
+    height: Math.max(1, bottom - top)
+  };
+}
+
+function getCurrentCanvasViewport() {
+  const screen = canvas.app?.renderer?.screen;
+  const coordinateSpace = canvas.portraitSprites ?? canvas.stage;
+  if (!screen || !coordinateSpace?.toLocal) return null;
+
+  const corners = [
+    new PIXI.Point(0, 0),
+    new PIXI.Point(screen.width, 0),
+    new PIXI.Point(screen.width, screen.height),
+    new PIXI.Point(0, screen.height)
+  ].map(point => coordinateSpace.toLocal(point));
+
+  const xs = corners.map(point => point.x);
+  const ys = corners.map(point => point.y);
+  const left = Math.min(...xs);
+  const right = Math.max(...xs);
+  const top = Math.min(...ys);
+  const bottom = Math.max(...ys);
+
+  if (![left, right, top, bottom].every(Number.isFinite)) return null;
+  if (right <= left || bottom <= top) return null;
+
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top
+  };
+}
+
+function getViewportSpawnTransform(config) {
+  const viewport = getCurrentCanvasViewport();
+  if (!viewport) return null;
+
+  const bounds = getSpriteContentBounds(config);
+  const fitScale = Math.min(
+    viewport.width * SPAWN_VIEW_FRACTION / bounds.width,
+    viewport.height * SPAWN_VIEW_FRACTION / bounds.height
+  );
+  const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, fitScale));
+  const viewportCenterX = viewport.x + viewport.width / 2;
+  const viewportCenterY = viewport.y + viewport.height / 2;
+  const contentCenterX = bounds.x + bounds.width / 2;
+  const contentCenterY = bounds.y + bounds.height / 2;
+
+  return {
+    x: viewportCenterX - contentCenterX * scale,
+    y: viewportCenterY - contentCenterY * scale,
+    scaleX: scale,
+    scaleY: scale
+  };
+}
+
 function normalizeSpriteConfig(config) {
+  const autoPlacement = config.autoPlace === false ? null : getViewportSpawnTransform(config);
+
   return {
     id: foundry.utils.randomID(),
     libraryId: config.libraryId || null,
@@ -22,9 +116,13 @@ function normalizeSpriteConfig(config) {
     bodyFrame: config.bodyFrame || { ...DEFAULT_BODY_FRAME },
     headFrames: config.headFrames || [getDefaultHeadFrame()],
     headOffset: config.headOffset || { ...DEFAULT_HEAD_OFFSET },
-    x: config.x || 0,
-    y: config.y || 0,
-    currentExpression: 0
+    x: autoPlacement?.x ?? finiteNumber(config.x, 0),
+    y: autoPlacement?.y ?? finiteNumber(config.y, 0),
+    rotation: finiteNumber(config.rotation, 0),
+    scaleX: autoPlacement?.scaleX ?? finiteNumber(config.scaleX, 1),
+    scaleY: autoPlacement?.scaleY ?? finiteNumber(config.scaleY, 1),
+    currentExpression: Number.isInteger(config.currentExpression) ? config.currentExpression : 0,
+    hiddenFromPlayers: Boolean(config.hiddenFromPlayers)
   };
 }
 
@@ -46,6 +144,9 @@ export function createPortraitSpritesApi() {
   return {
     /**
      * Add a new portrait sprite to the scene.
+     * By default the sprite is centered in the current canvas view and scaled
+     * to fit comfortably inside it. Pass autoPlace: false to preserve explicit
+     * x/y/scale values supplied by an API caller.
      * @param {Object} config - Sprite configuration.
      * @returns {Promise<Object|null>} The created sprite data.
      */
