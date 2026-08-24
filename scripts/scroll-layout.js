@@ -10,7 +10,7 @@ function getContentElement(root) {
 
 function clampApplicationHeight(application, preferredHeight) {
   const root = application.element;
-  if (!root) return;
+  if (!root || application._portraitClosing) return;
 
   const viewportHeight = Math.max(420, window.innerHeight - VIEWPORT_MARGIN);
   const rectangle = root.getBoundingClientRect();
@@ -22,10 +22,9 @@ function clampApplicationHeight(application, preferredHeight) {
     application.setPosition?.({ height: targetHeight });
   }
 
-  root.style.display = 'flex';
-  root.style.flexDirection = 'column';
-  root.style.maxHeight = `${viewportHeight}px`;
-  root.style.overflow = 'hidden';
+  // Do not write display/max-height/overflow onto the ApplicationV2 root.
+  // Foundry animates that outer frame when a window closes. Overriding those
+  // properties makes the framework wait for a transition which cannot be seen.
 }
 
 function installWheelScrolling(element) {
@@ -44,26 +43,53 @@ function installWheelScrolling(element) {
 }
 
 function scheduleLayout(application, configure) {
+  if (application._portraitClosing) return;
   window.cancelAnimationFrame(application._portraitLayoutFrame);
   application._portraitLayoutFrame = window.requestAnimationFrame(() => {
+    if (application._portraitClosing || !application.element?.isConnected) return;
     configure(application);
-    window.requestAnimationFrame(() => configure(application));
+    application._portraitLayoutFrame = window.requestAnimationFrame(() => {
+      if (application._portraitClosing || !application.element?.isConnected) return;
+      configure(application);
+    });
   });
 }
 
 function observeLayout(application, configure) {
   const root = application.element;
-  if (!root || application._portraitObservedRoot === root) return;
+  if (!root || application._portraitClosing || application._portraitObservedRoot === root) return;
 
   application._portraitLayoutObserver?.disconnect?.();
   application._portraitObservedRoot = root;
-  application._portraitLayoutObserver = new ResizeObserver(() => scheduleLayout(application, configure));
+  application._portraitLayoutObserver = new ResizeObserver(() => {
+    if (!application._portraitClosing) scheduleLayout(application, configure);
+  });
   application._portraitLayoutObserver.observe(root);
+}
+
+function stopLayoutManagement(application) {
+  application._portraitClosing = true;
+  window.cancelAnimationFrame(application._portraitLayoutFrame);
+  application._portraitLayoutFrame = null;
+  application._portraitLayoutObserver?.disconnect?.();
+  application._portraitLayoutObserver = null;
+  application._portraitObservedRoot = null;
+
+  // Remove root styles left by older versions of the module before Foundry starts
+  // its close transition. Inner scrolling styles can remain; they do not own the
+  // outer frame animation.
+  const root = application.element;
+  if (root) {
+    root.style.removeProperty('display');
+    root.style.removeProperty('flex-direction');
+    root.style.removeProperty('max-height');
+    root.style.removeProperty('overflow');
+  }
 }
 
 function configureCreatorLayout(application) {
   const root = application.element;
-  if (!root) return;
+  if (!root || application._portraitClosing) return;
   clampApplicationHeight(application, CREATOR_PREFERRED_HEIGHT);
 
   const content = getContentElement(root);
@@ -73,18 +99,13 @@ function configureCreatorLayout(application) {
   if (!content || !form || !tabContent) return;
 
   Object.assign(content.style, {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: '1 1 0',
     minHeight: '0',
-    height: 'auto',
     overflow: 'hidden'
   });
 
   Object.assign(form.style, {
     display: 'grid',
     gridTemplateRows: 'auto minmax(0, 1fr) auto',
-    flex: '1 1 auto',
     height: '100%',
     maxHeight: '100%',
     minHeight: '0',
@@ -178,7 +199,7 @@ function loadImage(src) {
 
 function configurePickerLayout(application) {
   const root = application.element;
-  if (!root) return;
+  if (!root || application._portraitClosing) return;
   clampApplicationHeight(application, PICKER_PREFERRED_HEIGHT);
 
   const content = getContentElement(root);
@@ -187,18 +208,13 @@ function configurePickerLayout(application) {
   if (!content || !picker || !grid) return;
 
   Object.assign(content.style, {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: '1 1 0',
     minHeight: '0',
-    height: 'auto',
     overflow: 'hidden'
   });
 
   Object.assign(picker.style, {
     display: 'grid',
     gridTemplateRows: 'auto minmax(0, 1fr)',
-    flex: '1 1 auto',
     height: '100%',
     minHeight: '0',
     overflow: 'hidden'
@@ -222,8 +238,9 @@ function renderHeadOnlyPreviews(application) {
   const root = application.element;
   if (!root) return;
   loadImage(application.sprite?.spritesheet).then(image => {
-    if (!application.element?.isConnected) return;
+    if (!application.element?.isConnected || application._portraitClosing) return;
     window.requestAnimationFrame(() => {
+      if (application._portraitClosing || !application.element?.isConnected) return;
       application.element.querySelectorAll('.expression-choice-preview').forEach(canvasElement => {
         const index = Number(canvasElement.dataset.expressionIndex);
         if (!Number.isInteger(index)) return;
@@ -233,7 +250,27 @@ function renderHeadOnlyPreviews(application) {
   });
 }
 
+function installCloseCleanup(ApplicationClass) {
+  if (ApplicationClass.prototype.portraitCloseCleanupInstalled) return;
+
+  Object.defineProperty(ApplicationClass.prototype, 'portraitCloseCleanupInstalled', {
+    value: true,
+    configurable: false,
+    enumerable: false,
+    writable: false
+  });
+
+  const originalPreClose = ApplicationClass.prototype._preClose;
+  ApplicationClass.prototype._preClose = async function(...args) {
+    stopLayoutManagement(this);
+    return originalPreClose?.apply(this, args);
+  };
+}
+
 export function installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPicker) {
+  installCloseCleanup(PortraitSpriteCreator);
+  installCloseCleanup(PortraitExpressionPicker);
+
   if (!PortraitSpriteCreator.prototype.portraitScrollingInstalled) {
     Object.defineProperty(PortraitSpriteCreator.prototype, 'portraitScrollingInstalled', {
       value: true,
@@ -244,6 +281,7 @@ export function installScrollableApplicationLayouts(PortraitSpriteCreator, Portr
 
     const originalCreatorRender = PortraitSpriteCreator.prototype._onRender;
     PortraitSpriteCreator.prototype._onRender = function(...args) {
+      this._portraitClosing = false;
       const result = originalCreatorRender.apply(this, args);
       scheduleLayout(this, configureCreatorLayout);
       observeLayout(this, configureCreatorLayout);
@@ -264,6 +302,7 @@ export function installScrollableApplicationLayouts(PortraitSpriteCreator, Portr
 
     const originalPickerRender = PortraitExpressionPicker.prototype._onRender;
     PortraitExpressionPicker.prototype._onRender = function(...args) {
+      this._portraitClosing = false;
       const result = originalPickerRender.apply(this, args);
       scheduleLayout(this, configurePickerLayout);
       observeLayout(this, configurePickerLayout);
