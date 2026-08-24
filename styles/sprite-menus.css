@@ -42,13 +42,8 @@
   width: 18px;
 }
 
-/* Visual expression picker */
-#portrait-expression-picker,
-.portrait-expression-picker {
-  max-height: calc(100vh - 64px) !important;
-  overflow: hidden !important;
-}
-
+/* Visual expression picker. Keep sizing constraints inside the ApplicationV2
+   content part so Foundry remains free to animate the outer window frame. */
 #portrait-expression-picker .window-content,
 .portrait-expression-picker .window-content,
 #portrait-expression-picker [data-application-part="content"],
@@ -158,13 +153,8 @@
   width: 100%;
 }
 
-/* Creator and editor: every tab has one forced vertical scroller. */
-#portrait-sprite-creator,
-.portrait-sprite-creator {
-  max-height: calc(100vh - 64px) !important;
-  overflow: hidden !important;
-}
-
+/* Creator and editor: every tab has one forced vertical scroller. Keep the
+   outer ApplicationV2 frame untouched so its native close transition can run. */
 #portrait-sprite-creator .window-content,
 .portrait-sprite-creator .window-content,
 #portrait-sprite-creator [data-application-part="content"],
