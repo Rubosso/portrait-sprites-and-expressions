@@ -1,27 +1,12 @@
 <section class="sprite-library-shell">
   <style>
     /* Keep the library usable even if Foundry does not reload the module stylesheet
-       while developing: the critical layout lives with the application template. */
-    #portrait-sprite-library,
-    .portrait-sprite-library {
-      max-height: calc(100vh - 24px) !important;
-      max-width: calc(100vw - 24px) !important;
-    }
-
-    #portrait-sprite-library .window-content,
-    .portrait-sprite-library .window-content {
-      display: flex !important;
-      flex: 1 1 auto;
-      height: 100% !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-    }
-
+       while developing. Only style the rendered part and its children: Foundry owns
+       the outer ApplicationV2 frame and its close/minimize transitions. */
     #portrait-sprite-library .sprite-library-shell,
     .portrait-sprite-library .sprite-library-shell {
       box-sizing: border-box;
       display: grid !important;
-      flex: 1 1 auto;
       gap: 12px;
       grid-template-rows: auto minmax(0, 1fr);
       height: 100%;
