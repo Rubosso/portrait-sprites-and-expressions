@@ -263,7 +263,9 @@ function drawLibraryPreview(canvasElement, image, entry) {
   if (!context || !image || !entry?.bodyFrame) return;
 
   const body = entry.bodyFrame;
-  const frame = entry.headFrames?.[0] ?? null;
+  // Library placement starts in the No Expression state, so its thumbnail should
+  // show that exact default instead of compositing expression frame 0.
+  const frame = null;
   const bounds = getCompositeBounds(entry, frame);
   const padding = 8;
   const scale = Math.min(
