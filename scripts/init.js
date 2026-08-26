@@ -26,11 +26,18 @@ import { installExpressionPickerAlignment } from "./runtime-fixes.js";
 import { installLargeExpressionPreviews } from "./expression-preview-size.js";
 import { installLiveSceneSync } from "./live-sync.js";
 import {
+  installSingleImageRuntimeSupport,
+  installSingleImageUiSupport
+} from "./single-image-support.js";
+import {
   PortraitSpriteLibrary,
   SPRITE_LIBRARY_SETTING,
   syncSpriteLibraryFromScenes
 } from "./sprite-library.js";
 
+// Install body-only rendering before the existing expression wrappers capture
+// the base PortraitSprite methods.
+installSingleImageRuntimeSupport(PortraitSprite);
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installFaceReplacement(PortraitSprite);
 installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator, PortraitSpriteLibrary);
@@ -50,6 +57,9 @@ installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPic
 installExpressionPickerAlignment(PortraitExpressionPicker);
 installLargeExpressionPreviews(PortraitExpressionPicker);
 installLiveSceneSync();
+// Install UI behavior last so it can suppress expression-specific controls and
+// preview timers after the existing creator/context-menu wrappers run.
+installSingleImageUiSupport(PortraitSpriteCreator, CountAwarePortraitSpriteEditor, PortraitSprite);
 
 Hooks.once("init", () => {
   log("Initializing");
