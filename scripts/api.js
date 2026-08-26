@@ -3,6 +3,7 @@
  */
 
 import { DEFAULT_BODY_FRAME, DEFAULT_HEAD_FRAME, DEFAULT_HEAD_OFFSET, MODULE_ID } from "./constants.js";
+import { NO_EXPRESSION } from "./no-expression.js";
 import { getSceneSprites, setSceneSprites } from "./scene-flags.js";
 import { rememberSpriteTemplate } from "./sprite-library.js";
 
@@ -121,7 +122,7 @@ function normalizeSpriteConfig(config) {
     rotation: finiteNumber(config.rotation, 0),
     scaleX: autoPlacement?.scaleX ?? finiteNumber(config.scaleX, 1),
     scaleY: autoPlacement?.scaleY ?? finiteNumber(config.scaleY, 1),
-    currentExpression: Number.isInteger(config.currentExpression) ? config.currentExpression : 0,
+    currentExpression: Number.isInteger(config.currentExpression) ? config.currentExpression : NO_EXPRESSION,
     flipX: Boolean(config.flipX),
     hiddenFromPlayers: Boolean(config.hiddenFromPlayers)
   };
