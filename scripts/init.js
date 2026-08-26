@@ -12,6 +12,7 @@ import { installNoExpressionSupport } from "./no-expression.js";
 import { installFaceReplacement } from "./face-replacement.js";
 import { installV13LayerControls } from "./v13-layer-controls.js";
 import { installTransformSupport } from "./transform.js";
+import { installFlipSupport } from "./flip-support.js";
 import {
   installSpriteMenus,
   PortraitExpressionPicker
@@ -34,6 +35,7 @@ installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installFaceReplacement(PortraitSprite);
 installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator, PortraitSpriteLibrary);
 installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
+installFlipSupport(PortraitSpritesLayer, PortraitSprite);
 installSpriteMenus(PortraitSprite);
 installContextMenuFix(
   PortraitSpritesLayer,
