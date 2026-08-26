@@ -25,6 +25,7 @@ import { installScrollableApplicationLayouts } from "./scroll-layout.js";
 import { installExpressionPickerAlignment } from "./runtime-fixes.js";
 import { installLargeExpressionPreviews } from "./expression-preview-size.js";
 import { installLiveSceneSync } from "./live-sync.js";
+import { installDragSync } from "./drag-sync.js";
 import {
   installSingleImageRuntimeSupport,
   installSingleImageUiSupport
@@ -97,6 +98,7 @@ Hooks.once("setup", () => {
 });
 
 Hooks.once("ready", () => {
+  installDragSync(PortraitSprite);
   if (game.user?.isGM) syncSpriteLibraryFromScenes();
 });
 
