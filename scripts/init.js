@@ -29,6 +29,7 @@ import {
   installSingleImageRuntimeSupport,
   installSingleImageUiSupport
 } from "./single-image-support.js";
+import { installSingleImageSelection } from "./single-image-selection.js";
 import {
   PortraitSpriteLibrary,
   SPRITE_LIBRARY_SETTING,
@@ -60,6 +61,9 @@ installLiveSceneSync();
 // Install UI behavior last so it can suppress expression-specific controls and
 // preview timers after the existing creator/context-menu wrappers run.
 installSingleImageUiSupport(PortraitSpriteCreator, CountAwarePortraitSpriteEditor, PortraitSprite);
+// Refine Single Image preview interaction after the UI wrapper so the hidden
+// expression/head hit regions can never intercept body selection drags.
+installSingleImageSelection(PortraitSpriteCreator);
 
 Hooks.once("init", () => {
   log("Initializing");
