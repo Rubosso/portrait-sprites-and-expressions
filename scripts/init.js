@@ -25,12 +25,21 @@ import { installScrollableApplicationLayouts } from "./scroll-layout.js";
 import { installExpressionPickerAlignment } from "./runtime-fixes.js";
 import { installLargeExpressionPreviews } from "./expression-preview-size.js";
 import { installLiveSceneSync } from "./live-sync.js";
+import { installDragSync } from "./drag-sync.js";
+import {
+  installSingleImageRuntimeSupport,
+  installSingleImageUiSupport
+} from "./single-image-support.js";
+import { installSingleImageSelection } from "./single-image-selection.js";
 import {
   PortraitSpriteLibrary,
   SPRITE_LIBRARY_SETTING,
   syncSpriteLibraryFromScenes
 } from "./sprite-library.js";
 
+// Install body-only rendering before the existing expression wrappers capture
+// the base PortraitSprite methods.
+installSingleImageRuntimeSupport(PortraitSprite);
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installFaceReplacement(PortraitSprite);
 installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator, PortraitSpriteLibrary);
@@ -50,6 +59,12 @@ installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPic
 installExpressionPickerAlignment(PortraitExpressionPicker);
 installLargeExpressionPreviews(PortraitExpressionPicker);
 installLiveSceneSync();
+// Install UI behavior last so it can suppress expression-specific controls and
+// preview timers after the existing creator/context-menu wrappers run.
+installSingleImageUiSupport(PortraitSpriteCreator, CountAwarePortraitSpriteEditor, PortraitSprite);
+// Refine Single Image preview interaction after the UI wrapper so the hidden
+// expression/head hit regions can never intercept body selection drags.
+installSingleImageSelection(PortraitSpriteCreator);
 
 Hooks.once("init", () => {
   log("Initializing");
@@ -83,6 +98,7 @@ Hooks.once("setup", () => {
 });
 
 Hooks.once("ready", () => {
+  installDragSync(PortraitSprite);
   if (game.user?.isGM) syncSpriteLibraryFromScenes();
 });
 
