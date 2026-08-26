@@ -122,6 +122,7 @@ function normalizeSpriteConfig(config) {
     scaleX: autoPlacement?.scaleX ?? finiteNumber(config.scaleX, 1),
     scaleY: autoPlacement?.scaleY ?? finiteNumber(config.scaleY, 1),
     currentExpression: Number.isInteger(config.currentExpression) ? config.currentExpression : 0,
+    flipX: Boolean(config.flipX),
     hiddenFromPlayers: Boolean(config.hiddenFromPlayers)
   };
 }
