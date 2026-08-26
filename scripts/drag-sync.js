@@ -1,7 +1,7 @@
 import { MODULE_ID } from "./constants.js";
 import { getSceneSprites, setSceneSprites } from "./scene-flags.js";
 
-const DRAG_SYNC_HZ = 12;
+const DRAG_SYNC_HZ = 20;
 const DRAG_SYNC_INTERVAL_MS = 1000 / DRAG_SYNC_HZ;
 const FALLBACK_SYNC_HZ = 5;
 const FALLBACK_SYNC_INTERVAL_MS = 1000 / FALLBACK_SYNC_HZ;
