@@ -93,15 +93,19 @@ function receiveDragPreview(data) {
   const layer = canvas.portraitSprites;
   if (!layer) return;
 
+  let applied = false;
   for (const position of data.positions ?? []) {
     const sprite = layer.sprites?.get?.(position?.id);
     const x = Number(position?.x);
     const y = Number(position?.y);
     if (!sprite || !Number.isFinite(x) || !Number.isFinite(y)) continue;
     sprite.position.set(x, y);
+    applied = true;
   }
 
-  sendDragAcknowledgement(data);
+  // Only confirm the socket path after a remote PIXI portrait was actually
+  // found and moved. Receipt alone is not enough to disable the fallback.
+  if (applied) sendDragAcknowledgement(data);
 }
 
 function receiveDragAcknowledgement(data) {
@@ -245,8 +249,8 @@ async function finishOutstandingFallback(primarySprite) {
  * Synchronize in-progress portrait dragging over Foundry's module socket. The
  * transient packet only moves remote PIXI containers; the existing mouse-up
  * path remains the authoritative persistent Scene save. A one-time ACK confirms
- * that another client is receiving the module relay. If no ACK arrives, the
- * drag temporarily falls back to the proven low-frequency Scene update path.
+ * that another client is receiving and applying the module relay. If no ACK
+ * arrives, the drag temporarily falls back to the proven Scene update path.
  */
 export function installDragSync(PortraitSprite) {
   if (PortraitSprite.prototype.dragSyncInstalled) return;
