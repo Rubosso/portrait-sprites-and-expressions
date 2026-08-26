@@ -2,7 +2,7 @@ const MENU_WIDTH = 190;
 const MENU_ROW_HEIGHT = 38;
 const MENU_PADDING = 6;
 const MENU_GAP = 10;
-const MENU_ACTION_COUNT = 5;
+const MENU_ACTION_COUNT = 6;
 const MENU_HEIGHT = MENU_PADDING * 2 + MENU_ROW_HEIGHT * MENU_ACTION_COUNT;
 
 function getNativeEvent(event) {
@@ -134,6 +134,13 @@ function createCanvasMenu(sprite, PortraitSpriteEditor, PortraitExpressionPicker
       activate: async () => {
         sprite.closeSpriteActionMenu();
         await sprite.resetSize?.();
+      }
+    },
+    {
+      label: game.i18n.localize("PORTRAIT_SPRITES.ContextMenu.FlipHorizontal"),
+      activate: async () => {
+        sprite.closeSpriteActionMenu();
+        await sprite.toggleHorizontalFlip?.();
       }
     },
     {
