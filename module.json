@@ -12,6 +12,7 @@
       "name": "Rubosso"
     }
   ],
+  "socket": true,
   "esmodules": [
     "scripts/init.js"
   ],
