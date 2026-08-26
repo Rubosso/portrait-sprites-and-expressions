@@ -61,6 +61,9 @@
         "Preview": "Preview"
       },
       "Spritesheet": "Spritesheet",
+      "SingleImageMode": "Single Image (No Expressions)",
+      "SingleImageModeHint": "Use the selected image as one body-only portrait. Expression grid, head offset, and expression selection are disabled.",
+      "SingleImageFinalHint": "This portrait has no expression layer; the final preview shows the body image exactly as it will appear on the canvas.",
       "BodyFrame": "Body Frame (x, y, width, height)",
       "BodyFrameHint": "The common FGO layout uses the top 768px for the body. When possible, the creator tightens this to the visible body pixels so transparent margins do not create an oversized selection area.",
       "HeadGrid": "Grid Start + Cell Size",
