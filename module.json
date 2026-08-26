@@ -19,7 +19,9 @@
     "styles/portrait-sprites.css",
     "styles/sprite-menus.css",
     "styles/context-menu-fix.css",
-    "styles/expression-picker-alignment.css"
+    "styles/expression-picker-alignment.css",
+    "styles/sprite-library.css",
+    "styles/final-preview-controls.css"
   ],
   "languages": [
     {

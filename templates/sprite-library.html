@@ -1,0 +1,218 @@
+<section class="sprite-library-shell">
+  <style>
+    /* Keep the library usable even if Foundry does not reload the module stylesheet
+       while developing. Only style the rendered part and its children: Foundry owns
+       the outer ApplicationV2 frame and its close/minimize transitions. */
+    #portrait-sprite-library .sprite-library-shell,
+    .portrait-sprite-library .sprite-library-shell {
+      box-sizing: border-box;
+      display: grid !important;
+      gap: 12px;
+      grid-template-rows: auto minmax(0, 1fr);
+      height: 100%;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      width: 100%;
+    }
+
+    #portrait-sprite-library .sprite-library-toolbar,
+    .portrait-sprite-library .sprite-library-toolbar {
+      align-items: center;
+      display: flex;
+      flex: 0 0 auto;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    #portrait-sprite-library .sprite-library-toolbar input,
+    .portrait-sprite-library .sprite-library-toolbar input {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+    }
+
+    #portrait-sprite-library .sprite-library-grid,
+    .portrait-sprite-library .sprite-library-grid {
+      align-content: start;
+      display: grid !important;
+      gap: 14px;
+      grid-auto-rows: max-content;
+      grid-template-columns: repeat(auto-fill, 230px) !important;
+      justify-content: start;
+      min-height: 0 !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+      padding: 2px 8px 10px 2px;
+      scrollbar-gutter: stable;
+    }
+
+    #portrait-sprite-library .sprite-library-card,
+    .portrait-sprite-library .sprite-library-card {
+      align-items: stretch;
+      background: rgba(0, 0, 0, 0.34) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      border-radius: 9px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
+      display: flex !important;
+      flex-direction: column;
+      gap: 9px;
+      overflow: hidden;
+      padding: 10px;
+      width: 230px !important;
+    }
+
+    #portrait-sprite-library .sprite-library-card[hidden],
+    .portrait-sprite-library .sprite-library-card[hidden] {
+      display: none !important;
+    }
+
+    #portrait-sprite-library .sprite-library-preview-wrap,
+    .portrait-sprite-library .sprite-library-preview-wrap {
+      align-items: center;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 7px;
+      display: flex;
+      height: 240px;
+      justify-content: center;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    #portrait-sprite-library .sprite-library-preview,
+    .portrait-sprite-library .sprite-library-preview {
+      background: transparent;
+      border: 0;
+      display: block;
+      height: 220px;
+      image-rendering: pixelated;
+      max-height: 220px;
+      max-width: 190px;
+      object-fit: contain;
+      width: 190px;
+    }
+
+    #portrait-sprite-library .sprite-library-card-copy,
+    .portrait-sprite-library .sprite-library-card-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    #portrait-sprite-library .sprite-library-name-input,
+    .portrait-sprite-library .sprite-library-name-input {
+      box-sizing: border-box;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0;
+      min-width: 0;
+      width: 100% !important;
+    }
+
+    #portrait-sprite-library .sprite-library-meta,
+    .portrait-sprite-library .sprite-library-meta {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    #portrait-sprite-library .sprite-library-card-actions,
+    .portrait-sprite-library .sprite-library-card-actions {
+      display: grid !important;
+      gap: 6px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+      margin-top: auto;
+    }
+
+    #portrait-sprite-library .sprite-library-card-actions button,
+    .portrait-sprite-library .sprite-library-card-actions button {
+      margin: 0 !important;
+      min-width: 0;
+      padding-left: 7px;
+      padding-right: 7px;
+      white-space: nowrap;
+      width: auto !important;
+    }
+
+    #portrait-sprite-library .sprite-library-delete,
+    .portrait-sprite-library .sprite-library-delete {
+      background: rgba(127, 29, 29, 0.2);
+      border-color: rgba(248, 113, 113, 0.42);
+    }
+
+    #portrait-sprite-library .sprite-library-empty,
+    .portrait-sprite-library .sprite-library-empty {
+      grid-column: 1 / -1;
+      margin: 24px 0;
+      opacity: 0.75;
+      text-align: center;
+    }
+  </style>
+
+  <div class="sprite-library-toolbar">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input
+      type="search"
+      data-action="search-library"
+      placeholder="{{localize 'PORTRAIT_SPRITES.Library.SearchPlaceholder'}}"
+      aria-label="{{localize 'PORTRAIT_SPRITES.Library.SearchPlaceholder'}}"
+      autocomplete="off"
+    />
+  </div>
+
+  <div class="sprite-library-grid">
+    {{#each entries}}
+      <article class="sprite-library-card" data-search-text="{{searchText}}">
+        <div class="sprite-library-preview-wrap" title="{{spritesheet}}">
+          <canvas
+            class="sprite-library-preview"
+            data-library-index="{{index}}"
+            width="190"
+            height="220"
+          ></canvas>
+        </div>
+
+        <div class="sprite-library-card-copy">
+          <input
+            type="text"
+            class="sprite-library-name-input"
+            data-action="rename-library-sprite"
+            data-library-index="{{index}}"
+            value="{{name}}"
+            placeholder="{{localize 'PORTRAIT_SPRITES.Library.NamePlaceholder'}}"
+            aria-label="{{localize 'PORTRAIT_SPRITES.Library.NameLabel'}}"
+            autocomplete="off"
+          />
+          <span class="sprite-library-meta">
+            {{localize "PORTRAIT_SPRITES.Library.ExpressionCount" count=expressionCount}}
+          </span>
+        </div>
+
+        <div class="sprite-library-card-actions">
+          <button
+            type="button"
+            class="sprite-library-add"
+            data-action="add-library-sprite"
+            data-library-index="{{index}}"
+          >
+            <i class="fas fa-plus"></i>
+            {{localize "PORTRAIT_SPRITES.Library.AddToScene"}}
+          </button>
+          <button
+            type="button"
+            class="sprite-library-delete"
+            data-action="delete-library-sprite"
+            data-library-index="{{index}}"
+          >
+            <i class="fas fa-trash"></i>
+            {{localize "PORTRAIT_SPRITES.Library.DeleteSaved"}}
+          </button>
+        </div>
+      </article>
+    {{else}}
+      <p class="sprite-library-empty">{{localize "PORTRAIT_SPRITES.Library.Empty"}}</p>
+    {{/each}}
+  </div>
+</section>

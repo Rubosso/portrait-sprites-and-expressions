@@ -7,32 +7,45 @@ import { createPortraitSpritesApi, MODULE_ID } from "./api.js";
 import { log } from "./constants.js";
 import { PortraitSprite, PortraitSpriteHUD, PortraitSpritesLayer } from "./layer.js";
 import { PortraitSpriteCreator } from "./creator.js";
+import { CountAwarePortraitSpriteEditor } from "./count-aware-editor.js";
 import { installNoExpressionSupport } from "./no-expression.js";
 import { installFaceReplacement } from "./face-replacement.js";
 import { installV13LayerControls } from "./v13-layer-controls.js";
 import { installTransformSupport } from "./transform.js";
+import { installFlipSupport } from "./flip-support.js";
 import {
   installSpriteMenus,
-  PortraitExpressionPicker,
-  PortraitSpriteEditor
+  PortraitExpressionPicker
 } from "./sprite-menus.js";
 import { installContextMenuFix } from "./context-menu-fix.js";
+import { installPlayerVisibility } from "./player-visibility.js";
+import { installKeyboardDelete } from "./keyboard-delete.js";
+import { installFinalPreviewControls } from "./final-preview-controls.js";
 import { installScrollableApplicationLayouts } from "./scroll-layout.js";
 import { installExpressionPickerAlignment } from "./runtime-fixes.js";
 import { installLargeExpressionPreviews } from "./expression-preview-size.js";
 import { installLiveSceneSync } from "./live-sync.js";
+import {
+  PortraitSpriteLibrary,
+  SPRITE_LIBRARY_SETTING,
+  syncSpriteLibraryFromScenes
+} from "./sprite-library.js";
 
 installNoExpressionSupport(PortraitSprite, PortraitSpriteHUD);
 installFaceReplacement(PortraitSprite);
-installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator);
+installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator, PortraitSpriteLibrary);
 installTransformSupport(PortraitSpritesLayer, PortraitSprite, PortraitSpriteHUD);
+installFlipSupport(PortraitSpritesLayer, PortraitSprite);
 installSpriteMenus(PortraitSprite);
 installContextMenuFix(
   PortraitSpritesLayer,
   PortraitSprite,
-  PortraitSpriteEditor,
+  CountAwarePortraitSpriteEditor,
   PortraitExpressionPicker
 );
+installPlayerVisibility(PortraitSpritesLayer, PortraitSprite);
+installKeyboardDelete();
+installFinalPreviewControls(PortraitSpriteCreator);
 installScrollableApplicationLayouts(PortraitSpriteCreator, PortraitExpressionPicker);
 installExpressionPickerAlignment(PortraitExpressionPicker);
 installLargeExpressionPreviews(PortraitExpressionPicker);
@@ -48,6 +61,14 @@ Hooks.once("init", () => {
     default: "1.0.0",
     type: String
   });
+
+  game.settings.register(MODULE_ID, SPRITE_LIBRARY_SETTING, {
+    name: "Portrait Sprite Library",
+    scope: "world",
+    config: false,
+    default: { entries: [], ignoredSignatures: [] },
+    type: Object
+  });
 });
 
 Hooks.once("setup", () => {
@@ -59,6 +80,10 @@ Hooks.once("setup", () => {
     layerClass: PortraitSpritesLayer,
     group: "interface"
   };
+});
+
+Hooks.once("ready", () => {
+  if (game.user?.isGM) syncSpriteLibraryFromScenes();
 });
 
 Hooks.on("canvasReady", canvasInstance => {

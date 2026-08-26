@@ -17,7 +17,8 @@ export const TEMPLATES = {
   creator: `modules/${MODULE_ID}/templates/creator.html`,
   hud: `modules/${MODULE_ID}/templates/hud.html`,
   contextMenu: `modules/${MODULE_ID}/templates/context-menu.html`,
-  expressionPicker: `modules/${MODULE_ID}/templates/expression-picker.html`
+  expressionPicker: `modules/${MODULE_ID}/templates/expression-picker.html`,
+  spriteLibrary: `modules/${MODULE_ID}/templates/sprite-library.html`
 };
 
 export const log = (...args) => console.log(`${MODULE_TITLE} |`, ...args);

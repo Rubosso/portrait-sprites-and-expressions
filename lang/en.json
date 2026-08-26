@@ -23,13 +23,31 @@
       "Title": "Sprite Actions",
       "Edit": "Edit",
       "Expressions": "Expressions",
-      "Reset": "Reset"
+      "Reset": "Reset",
+      "FlipHorizontal": "Flip Horizontal",
+      "HidePlayers": "Hide from Players",
+      "ShowPlayers": "Show to Players",
+      "Delete": "Delete from Scene"
     },
     "ExpressionPicker": {
       "Title": "Choose Expression",
       "Hint": "Select an expression from its face thumbnail. No Expression removes the head layer.",
       "SearchPlaceholder": "Search expressions by name…",
       "ClearSearch": "Clear expression search"
+    },
+    "Library": {
+      "Title": "Portrait Sprite Library",
+      "Tool": "Add Existing Portrait Sprite",
+      "SearchPlaceholder": "Search saved sprites…",
+      "NameLabel": "Sprite name",
+      "NamePlaceholder": "Name this sprite…",
+      "AddToScene": "Add to Scene",
+      "DeleteSaved": "Delete",
+      "DeleteConfirm": "Delete {name} from the portrait sprite library? Portraits already placed on Scenes will remain.",
+      "Deleted": "Deleted {name} from the sprite library.",
+      "ExpressionCount": "{count} expressions",
+      "Empty": "No reusable portrait sprites have been created yet.",
+      "Added": "Added {name} to the scene."
     },
     "Creator": {
       "Title": "Portrait Sprite Creator",
@@ -44,14 +62,17 @@
       },
       "Spritesheet": "Spritesheet",
       "BodyFrame": "Body Frame (x, y, width, height)",
-      "BodyFrameHint": "Define the rectangle for the full body sprite.",
+      "BodyFrameHint": "The common FGO layout uses the top 768px for the body. When possible, the creator tightens this to the visible body pixels so transparent margins do not create an oversized selection area.",
       "HeadGrid": "Grid Start + Cell Size",
-      "HeadGridLayout": "Grid Layout (columns, rows)",
+      "HeadGridLayout": "Grid Layout",
+      "ExpressionCount": "Expression Count",
+      "ExpressionCountShort": "Count",
+      "ExpressionCountHint": "Only the first Count cells are used. The current grid can hold up to {capacity} expressions, so a partially filled final row does not need dummy expressions.",
       "HeadOffset": "Head Offset (x, y)",
       "ExpressionLabel": "Expression {index}",
       "CreateSprite": "Create Sprite",
       "SaveSprite": "Save Sprite",
-      "PreviewHint": "Preview shows the original image at its natural aspect ratio, with the body box in red, the head grid box in pink, and expression frames in cyan.",
+      "PreviewHint": "Preview shows the original image at its natural aspect ratio, with the body box in red, the head grid box in pink, and used expression frames in cyan.",
       "PreviewPlaceholder": "Select a spritesheet to preview the grid.",
       "DefaultExpressionName": "Expression {index}",
       "Messages": {
@@ -68,8 +89,8 @@
       },
       "ImageDimensions": "Original image: {width} × {height}px",
       "ImageDimensionsUnknown": "Original image dimensions unavailable until a spritesheet is loaded.",
-      "FinalPreviewHint": "Cycles through expressions once per second using the current body, head grid, and head offset settings.",
-      "MagnifierHint": "Move over the final preview to inspect pixels; use the mouse wheel to adjust zoom."
+      "FinalPreviewHint": "Alternates once per second between No Expression and a random configured expression so alignment changes are easy to compare.",
+      "MagnifierHint": "Move over the final preview to inspect pixels; use the mouse wheel to adjust zoom. Head Offset controls below this magnifier update the preview live."
     },
     "DefaultExpression": "Default Expression",
     "Tools": {

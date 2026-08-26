@@ -3,7 +3,12 @@
  * SceneControls lifecycle. Foundry owns layer event modes; this module only
  * enables or disables the portrait sprite children when the layer changes.
  */
-export function installV13LayerControls(PortraitSpritesLayer, PortraitSprite, PortraitSpriteCreator) {
+export function installV13LayerControls(
+  PortraitSpritesLayer,
+  PortraitSprite,
+  PortraitSpriteCreator,
+  PortraitSpriteLibrary
+) {
   if (PortraitSpritesLayer.prototype.v13LayerControlsInstalled) return;
 
   Object.defineProperty(PortraitSpritesLayer.prototype, "v13LayerControlsInstalled", {
@@ -55,6 +60,18 @@ export function installV13LayerControls(PortraitSpritesLayer, PortraitSprite, Po
           onChange: (_event, active) => {
             if (active === false || !canManagePortraitSprites()) return;
             new PortraitSpriteCreator().render(true);
+          }
+        },
+        portraitSpriteLibrary: {
+          name: "portraitSpriteLibrary",
+          order: 3,
+          title: "PORTRAIT_SPRITES.Library.Tool",
+          icon: "fas fa-box-open",
+          button: true,
+          visible: canManage,
+          onChange: (_event, active) => {
+            if (active === false || !canManagePortraitSprites()) return;
+            new PortraitSpriteLibrary().render(true);
           }
         }
       }

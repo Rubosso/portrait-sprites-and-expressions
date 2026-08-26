@@ -2,7 +2,8 @@ const MENU_WIDTH = 190;
 const MENU_ROW_HEIGHT = 38;
 const MENU_PADDING = 6;
 const MENU_GAP = 10;
-const MENU_HEIGHT = MENU_PADDING * 2 + MENU_ROW_HEIGHT * 3;
+const MENU_ACTION_COUNT = 6;
+const MENU_HEIGHT = MENU_PADDING * 2 + MENU_ROW_HEIGHT * MENU_ACTION_COUNT;
 
 function getNativeEvent(event) {
   return event?.nativeEvent
@@ -134,6 +135,31 @@ function createCanvasMenu(sprite, PortraitSpriteEditor, PortraitExpressionPicker
         sprite.closeSpriteActionMenu();
         await sprite.resetSize?.();
       }
+    },
+    {
+      label: game.i18n.localize("PORTRAIT_SPRITES.ContextMenu.FlipHorizontal"),
+      activate: async () => {
+        sprite.closeSpriteActionMenu();
+        await sprite.toggleHorizontalFlip?.();
+      }
+    },
+    {
+      label: game.i18n.localize(
+        sprite.hiddenFromPlayers
+          ? "PORTRAIT_SPRITES.ContextMenu.ShowPlayers"
+          : "PORTRAIT_SPRITES.ContextMenu.HidePlayers"
+      ),
+      activate: async () => {
+        sprite.closeSpriteActionMenu();
+        await sprite.setHiddenFromPlayers?.(!sprite.hiddenFromPlayers);
+      }
+    },
+    {
+      label: game.i18n.localize("PORTRAIT_SPRITES.ContextMenu.Delete"),
+      activate: async () => {
+        sprite.closeSpriteActionMenu();
+        await window.PortraitSprites?.removeSprite?.(sprite.id);
+      }
     }
   ];
 
@@ -198,8 +224,15 @@ export function installContextMenuFix(
     const layer = this.parent;
     if (!layer) return null;
 
+    const hiddenState = Boolean(this.hiddenFromPlayers);
+    if (this.spriteActionMenu && this.spriteActionMenuHiddenState !== hiddenState) {
+      this.spriteActionMenu.destroy({ children: true });
+      this.spriteActionMenu = null;
+    }
+
     if (!this.spriteActionMenu) {
       this.spriteActionMenu = createCanvasMenu(this, PortraitSpriteEditor, PortraitExpressionPicker);
+      this.spriteActionMenuHiddenState = hiddenState;
     }
     if (this.spriteActionMenu.parent !== layer) layer.addChild(this.spriteActionMenu);
     return this.spriteActionMenu;
@@ -295,6 +328,7 @@ export function installContextMenuFix(
       this.spriteActionMenu.destroy({ children: true });
       this.spriteActionMenu = null;
     }
+    this.spriteActionMenuHiddenState = null;
     return originalDestroy.call(this, options);
   };
 }
