@@ -4,6 +4,8 @@ const DRAG_SYNC_HZ = 12;
 const DRAG_SYNC_INTERVAL_MS = 1000 / DRAG_SYNC_HZ;
 const SOCKET_NAME = `module.${MODULE_ID}`;
 
+let captureBroadcastQueued = false;
+
 function getDragPositions(primarySprite) {
   const state = primarySprite.parent?.groupDragState;
   if (!state || state.primary !== primarySprite) return [];
@@ -13,6 +15,11 @@ function getDragPositions(primarySprite) {
     x: sprite.position.x,
     y: sprite.position.y
   }));
+}
+
+function getActiveDragPrimary() {
+  const primary = canvas.portraitSprites?.groupDragState?.primary;
+  return primary?.isDragging ? primary : null;
 }
 
 function broadcastDragPositions(primarySprite, { force = false } = {}) {
@@ -31,6 +38,20 @@ function broadcastDragPositions(primarySprite, { force = false } = {}) {
     senderId: game.user.id,
     sceneId: canvas.scene.id,
     positions
+  });
+}
+
+function queueCapturedDragBroadcast() {
+  if (captureBroadcastQueued || !getActiveDragPrimary()) return;
+  captureBroadcastQueued = true;
+
+  // The capture listener runs before PIXI's target handlers. Defer until the
+  // current browser event has finished so the sprite has already applied the
+  // newest drag position before we read and broadcast it.
+  queueMicrotask(() => {
+    captureBroadcastQueued = false;
+    const primary = getActiveDragPrimary();
+    if (primary) broadcastDragPositions(primary);
   });
 }
 
@@ -101,6 +122,16 @@ export function installDragSync(PortraitSprite) {
     this._portraitDragSyncLastSent = 0;
     return originalDestroy.call(this, options);
   };
+
+  // Foundry/PIXI can consume movement events while a portrait owns the drag.
+  // Listen during DOM capture as an independent driver so transient sync keeps
+  // running even when ordinary bubbling mousemove listeners (such as pointer
+  // modules) stop receiving movement during the drag.
+  if (!window._portraitDragSyncCaptureInstalled) {
+    window._portraitDragSyncCaptureInstalled = true;
+    window.addEventListener("pointermove", queueCapturedDragBroadcast, true);
+    window.addEventListener("mousemove", queueCapturedDragBroadcast, true);
+  }
 
   game.socket.on(SOCKET_NAME, receiveDragPreview);
 }
