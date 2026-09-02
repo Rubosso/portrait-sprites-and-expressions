@@ -6,11 +6,23 @@ function isEditableTarget(target) {
   return Boolean(target.closest("[contenteditable=''], [contenteditable='true']"));
 }
 
+function isPortraitLayerActive(layer) {
+  return Boolean(
+    layer
+    && canvas.scene
+    && canvas.activeLayer === layer
+    && layer.active
+    && layer.interactionActive
+  );
+}
+
 /**
  * Delete selected portrait sprite instances with the keyboard Delete key.
  *
  * This only removes the selected instances from the active Scene. Reusable
- * library entries are intentionally untouched.
+ * library entries are intentionally untouched. The key is consumed only while
+ * the portrait layer is Foundry's active canvas layer, so native Delete behavior
+ * remains available to tokens, tiles, walls, lights, and other canvas layers.
  */
 export function installKeyboardDelete() {
   if (window.portraitSpriteKeyboardDeleteInstalled) return;
@@ -21,7 +33,7 @@ export function installKeyboardDelete() {
     if (!game.user?.isGM || isEditableTarget(event.target)) return;
 
     const layer = canvas.portraitSprites;
-    if (!layer?.interactionActive || !canvas.scene) return;
+    if (!isPortraitLayerActive(layer)) return;
 
     const selected = layer.getSelectedSprites?.()
       ?? Array.from(layer.sprites?.values?.() ?? []).filter(sprite => sprite.selected);
